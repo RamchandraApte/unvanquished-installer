@@ -1,0 +1,4 @@
+fontconfig
+libaudio2
+libxext6 #Should be present
+libxi6 

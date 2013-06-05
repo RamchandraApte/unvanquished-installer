@@ -1,0 +1,11 @@
+# installdir will be substituted by the installer
+[Desktop Entry]
+Version=1.0
+Name=Unvanquished
+Comment=First-person shooter game - aliens vs humans
+Icon=unvanquished
+Terminal=false
+Type=Application
+Exec={installdir}/unvanquished.bin %U
+Categories=Game;ActionGame;StrategyGame;
+MimeType=x-scheme-handler/unv
