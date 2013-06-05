@@ -1,0 +1,4 @@
+unvanquished-installer
+======================
+
+unvanquished installer
