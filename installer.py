@@ -94,10 +94,11 @@ import stat
 import traceback
 
 keep_ref = []
-# download_dir_url =
-# "http://internode.dl.sourceforge.net/project/unvanquished/Assets/"
-download_dir_url = "http://127.0.0.1:8080/installer/"
-UNVANQUISHED_VERSION = "0.10"
+if not freeze:
+    download_dir_url = "http://127.0.0.1:8080/installer/"
+if freeze:
+    download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
+UNVANQUISHED_VERSION = "0.16"
 STAGES = ("Alpha", "Beta", "RC")
 stages_index = {stage[0].lower(): stage for stage in STAGES}
 
@@ -108,41 +109,36 @@ class FileDownloader:
     index = -1
     manager = QtNetwork.QNetworkAccessManager()
 
-    def __init__(self, filenames):
-        self.filenames = filenames
+    def __init__(self, file_infos):
+        self.file_infos = file_infos
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_info)
-        self.install_proc = self.install()
         self.base_dir = os.path.join(installdir, "base")
-        self.start_next_download()
+        self.install_proc = self.install()
 
-    @staticmethod
-    def install():
+    def install(self):
         # TODO in production installer.py should be removed
         if not freeze:
-            proc, failcode = popen_root((sys.executable, os.path.abspath("installer.py"),
-                          os.path.abspath(installdir), str(os.getuid())),
-                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            proc = popen_root((sys.executable, os.path.abspath("installer.py"),
+                          os.path.abspath(installdir), str(os.getuid())),)
         if freeze:
-            proc, failcode = popen_root((sys.executable,
-                               os.path.abspath(installdir), str(os.getuid())),
-                               stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        import pdb;pdb.set_trace()
+            proc = popen_root((sys.executable,
+                               os.path.abspath(installdir), str(os.getuid())),)
         line = proc.stdout.readline()
-        proc.poll()
-        if proc.returncode == failcode: # User cancelled dialog
+        #import pdb;pdb.set_trace()
+        if line == b"": # User cancelled dialog
             wizard.restart()
-        elif proc.returncode == None:
-            assert line == b"started\n", "Child process gave incorrect output {}".format(line)
         else:
-            raise ValueError("Child process gave unknown return code {}".format(proc.returncode))
+            assert line == b"started\n", "Child process gave incorrect output {}".format(line)
+            self.start_next_download()
+
         return proc
 
     def connected(self, bytes_received, total_bytes):
         self.total_bytes = total_bytes
         self.lasttime = time.monotonic()
         self.last_bytes_received = bytes_received
-        size = int(file_info_csv[self.index]["size"])
+        size = int(self.file_infos[self.index]["size"])
         # ui.downloadProgressTableWidget.setItem(self.index, 3,
         # QtGui.QTableWidgetItem(size))
         ui.currentFileProgressBar.setMaximum(size)
@@ -191,7 +187,7 @@ class FileDownloader:
         # print(self.bytes_received)
         current_time = time.perf_counter()
         ui.currentFileDownloadProgress.setText("{} / {}".format(human_readable_size(
-            self.bytes_received), human_readable_size(int(file_info_csv[self.index]["size"]))))
+            self.bytes_received), human_readable_size(int(self.file_infos[self.index]["size"]))))
         ui.totalDownloadProgress.setText("{} / {}".format(human_readable_size(
             self.totalDownloaded), human_readable_size(totalSize)))
         SMOOTHING_FACTOR = 0.003
@@ -223,18 +219,22 @@ class FileDownloader:
         if self.index >= 0:
             shutil.move(self.fp.name, self.filename)
             self.fp.close()
-        self.completeFilesSize += int(file_info_csv[self.index]["size"])
+        self.completeFilesSize += int(self.file_infos[self.index]["size"])
         self.index += 1
         try:
-            self.filename = self.filenames[self.index]
+            self.filename = self.file_infos[self.index]["filename"]
         except IndexError:
             self.install_proc.stdin.write(b"chown_root\n")
             wizard.next()
             return
-        filename = file_info_csv[self.index]["filename"]
-        ui.currentFileName.setText(str(file_info_csv[self.index]["name"] if ismap(filename) else file_info_csv[self.index]["filename"]))
+        filename = self.file_infos[self.index]["filename"]
+        ui.currentFileName.setText(str(self.file_infos[self.index]["name"] if ismap(filename) else self.file_infos[self.index]["filename"]))
         ui.totalFileProgress.setText("{} out of {}".format(
-            self.index, len(self.filenames)))
+            self.index, len(self.file_infos)))
+        oldSelectionMode = ui.fileInfoTableWidget.selectionMode()
+        ui.fileInfoTableWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        ui.fileInfoTableWidget.selectRow(self.index)
+        ui.fileInfoTableWidget.setSelectionMode(oldSelectionMode)
         self.currentreply = self.manager.get(
             QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url + self.filename)))
         self.fp = open(os.path.join(
@@ -281,49 +281,42 @@ mirror = "auto"
 
 def linux_gui_sudo():
     exe = shutil.which("pkexec")
-    if exe != None:
-        failcode = 127
+    if exe: return exe
+    exes = list(filter(None, map(shutil.which, (
+        "kdesudo", "kdesu", "gksudo", "gksu"))))
+    if len(exes) == 1:
+        return exes[0]
+    # Detect the DE and execute gksudo/kdesudo (portions from
+    # http://stackoverflow.com/a/2035666)
+    desktop_environment = None
+    if os.environ.get("KDE_FULL_SESSION") == "true":
+        desktop_environment = "kde"
+    elif os.environ.get("GNOME_DESKTOP_SESSION_ID"):
+        desktop_environment = "gnome"
     else:
-        exes = list(filter(None, map(shutil.which, (
-            "kdesudo", "kdesu", "gksudo", "gksu"))))
-        if len(exes) == 1:
-            return exes[0]
-        # Detect the DE and execute gksudo/kdesudo (portions from
-        # http://stackoverflow.com/a/2035666)
-        desktop_environment = None
-        if os.environ.get("KDE_FULL_SESSION") == "true":
-            desktop_environment = "kde"
-        elif os.environ.get("GNOME_DESKTOP_SESSION_ID"):
-            desktop_environment = "gnome"
-        else:
-            desktop_session = os.environ.get("DESKTOP_SESSION")
-            if desktop_session:
-                if "kde" in desktop_session:
-                    desktop_environment = "kde"
-                elif "gnome" in desktop_session or desktop_session == "ubuntu":
-                    desktop_environment = "gnome"
-        if desktop_environment == "kde":
-            names = "kdesudo", "kdesu"
-            failcode = 1
-        elif desktop_environment == "gnome":
-            names = "gksudo", "gksu"
-            failcode = 255
-        else:
-            names = ()
-        exes = list(filter(None, map(shutil.which, names)))
-        if exes:
-            exe = exes[0]
-
-    return exe, failcode
+        desktop_session = os.environ.get("DESKTOP_SESSION")
+        if desktop_session:
+            if "kde" in desktop_session:
+                desktop_environment = "kde"
+            elif "gnome" in desktop_session or desktop_session == "ubuntu":
+                desktop_environment = "gnome"
+    if desktop_environment == "kde":
+        names = "kdesudo", "kdesu"
+    elif desktop_environment == "gnome":
+        names = "gksudo", "gksu"
+    else:
+        names = ()
+    exes = list(filter(None, map(shutil.which, names)))
+    if exes:
+        exe = exes[0]
+        return exe
 
 AuthDialogCancelled = False
 
 def popen_root(cmd_args, *args, **kwargs):
     # TODO windos
     if os.name == "posix":
-        binary = linux_gui_sudo()[0]
-        failcode = linux_gui_sudo()[1]
-        return subprocess.Popen((binary,) + cmd_args, *args, **kwargs), failcode
+        return subprocess.Popen((linux_gui_sudo(),) + cmd_args, stderr = subprocess.DEVNULL, stdin=subprocess.PIPE, stdout=subprocess.PIPE, *args, **kwargs)
     elif os.name == "win32":
         pass
 
@@ -397,9 +390,8 @@ def start_file_downloader(id_):
         gen_table(ui.fileInfoTableWidget, selected_rows + notmaps)
         totalSize = sum(int(row["size"]) for row in file_infos)
         ui.totalProgressBar.setMaximum(2 ** 31 - 1)  # max value of signed int
-        filenames = tuple(row["filename"] for row in file_infos)
         installdir = ui.directoryToInstallInLineEdit.text()
-        downloader = FileDownloader(filenames)
+        downloader = FileDownloader(file_infos)
 
 
 def on_finish_button():
