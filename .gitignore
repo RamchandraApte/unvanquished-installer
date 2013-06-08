@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Compiled source #
 ###################
 *.exe
@@ -42,4 +41,3 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
->>>>>>> 270e26305ad123a79a9bb348fc6f1481d4b44985
