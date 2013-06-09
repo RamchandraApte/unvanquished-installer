@@ -58,7 +58,7 @@ error_dialog_open = False
 
 def excepthook(exctype, value, tb):
     global error_dialog_open
-    if error_dialog_open is False:
+    if error_dialog_open is False: # To ensure that cases where an error occurs in the error handler, infinite dialogs won't popup.
         error_dialog_open = True
         error_dialog = QtGui.QMessageBox(
             QtGui.QMessageBox.Critical, "Internal Error",
@@ -66,12 +66,9 @@ def excepthook(exctype, value, tb):
             " can't continue. Please <a href=\"https://github.com/Unvanquished"
             "/Unvanquished/issues\">file a bug report</a> with the diagnostic "
             "information below.")
-        # error_dialog.setInformativeText()
-        # textBrowser = QtGui.QTextBrowser(error_dialog)
-        error_dialog.setDetailedText("".join(
+
+        error_dialog.setInformativeText("".join(
             traceback.format_exception(exctype, value, tb)))
-        # layout.addWidget(textBrowser, layout.rowCount()+1, 0)
-        # textBrowser.show()
         error_dialog.exec()
         app.exit()
 
