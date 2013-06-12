@@ -1,5 +1,5 @@
 __license__ = '''
-Unvanquished Installer, an installer for Unvanquished (http://unvanquished.org).
+Unvanquished Installer, an installer for Unvanquished (http://unvanquished.net).
 Copyright (C) 2012-2013  Ramchandra Apte
 
 This program is free software: you can redistribute it and/or modify
@@ -214,7 +214,10 @@ class FileDownloader:
     def start_next_download(self):
         self.timer.stop()
         if self.index >= 0:
+            import time
+            print(time.time())
             shutil.move(self.fp.name, self.filename)
+            print(time.time())
             self.fp.close()
         self.completeFilesSize += int(self.file_infos[self.index]["size"])
         self.index += 1
@@ -307,8 +310,6 @@ def linux_gui_sudo():
     if exes:
         exe = exes[0]
         return exe
-
-AuthDialogCancelled = False
 
 def popen_root(cmd_args, *args, **kwargs):
     # TODO windos
