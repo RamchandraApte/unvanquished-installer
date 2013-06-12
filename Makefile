@@ -18,6 +18,9 @@
 # TODO: upgrade system and use newer packages
 
 all: run  Makefile
+ui_installer.py: installer.ui
+	pyuic4 installer.ui -o ui_installer.py
+installer.py: ui_installer.py
 tar_data.py: gen_tar_data.py dist
 	python3.3 gen_tar_data.py
 tar_dec_dist: tar_data.py tar_dec.py installer.py

@@ -183,7 +183,7 @@
        <number>3</number>
       </property>
       <attribute name="horizontalHeaderVisible">
-       <bool>true</bool>
+       <bool>false</bool>
       </attribute>
       <attribute name="verticalHeaderVisible">
        <bool>false</bool>
@@ -296,7 +296,20 @@
     <item>
      <widget class="QCheckBox" name="displayUnvInAppMenu">
       <property name="text">
-       <string>Display Unvanquished in application menu.</string>
+       <string>Display Unvanquished in the application menu.</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QCheckBox" name="displayUnvInDesktop">
+      <property name="text">
+       <string>Display Unvanquished in the desktop.</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
@@ -304,6 +317,9 @@
      <widget class="QCheckBox" name="runUnvAfterFinish">
       <property name="text">
        <string>Run Unvanquished after finish.</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </item>

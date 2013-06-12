@@ -122,7 +122,7 @@ class FileDownloader:
             proc = popen_root((sys.executable,
                                os.path.abspath(installdir), str(os.getuid())),)
         line = proc.stdout.readline()
-        #import pdb;pdb.set_trace()
+
         if line == b"": # User cancelled dialog
             wizard.restart()
         else:
@@ -157,12 +157,12 @@ class FileDownloader:
             seconds = (total - downloaded) / speed
         except ZeroDivisionError:
             return "∞ (Infinity, will take forever)"
-        eta_delta = datetime.timedelta(seconds=seconds)
-        days = eta_delta.days
-        hours, rem = divmod(eta_delta.seconds, 3600)
+        days, rem = divmod(seconds, 86400)
+        hours, rem = divmod(rem, 3600)
         minutes, seconds = divmod(rem, 60)
+        if seconds < 1:seconds = 1
         locals_ = locals()
-        magnitudes_str = ("{n} {magnitude}".format(n=locals_[magnitude], magnitude=magnitude)
+        magnitudes_str = ("{n} {magnitude}".format(n=int(locals_[magnitude]), magnitude=magnitude)
                           for magnitude in ("days", "hours", "minutes", "seconds") if locals_[magnitude])
         eta_str = ", ".join(magnitudes_str)
         return eta_str
@@ -393,7 +393,7 @@ def start_file_downloader(id_):
 
 def on_finish_button():
     # After the Finish button is clicked.
-    # import pdb;pdb.set_trace()
+    
     if ui.displayUnvInAppMenu.isChecked():
         with open("unvanquished.in.desktop") as infp, open("unvanquished.desktop", "w") as outfp:
             outfp.write(infp.read().format(installdir=os.path.abspath(installdir)))
