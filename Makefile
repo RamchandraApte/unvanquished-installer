@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-PYTHON=python3.3
+PYTHON=python3
 PYUIC=pyuic4
-PY_SRC_DIR=~/py
+PY_SRC_DIR=~/Downloads/Python-3*
 
 # TODO: make compilation optimized
 # TODO: upgrade system and use newer packages
@@ -28,7 +28,7 @@ installer.py: ui_installer.py
 tar_data.py: gen_tar_data.py dist
 	$(PYTHON) gen_tar_data.py
 tar_dec_dist: tar_data.py tar_dec.py installer.py
-	$(PYTHON) $(PY_SRC_DIR)/Tools/freeze/freeze.py $(EXCLUDES) -X PyQt4 -o tar_dec_dist tar_dec.py -m installer -m encodings.idna -m encodings.ascii
+	$(PYTHON) $(PY_SRC_DIR)/Tools/freeze/freeze.py -X PyQt4 -o tar_dec_dist tar_dec.py -m installer -m encodings.idna -m encodings.ascii
 
 compile: tar_dec_dist
 	$(MAKE) -C tar_dec_dist

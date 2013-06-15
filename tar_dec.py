@@ -26,8 +26,6 @@ import os.path
 import argparse
 import tar_data
 lib_path_env = {"win32": "PATH", "linux": "LD_LIBRARY_PATH"}
-import pdb;pdb.set_trace()
-VERSION="super duper teter"
 with tarfile.TarFile(fileobj = io.BytesIO(tar_data.data)) as tar_obj:
     base_dir = os.path.split(sys.executable)[0]
     tar_obj.extractall(base_dir)
