@@ -1,0 +1,19 @@
+diff --git a/Tools/freeze/makefreeze.py b/Tools/freeze/makefreeze.py
+--- a/Tools/freeze/makefreeze.py
++++ b/Tools/freeze/makefreeze.py
+@@ -84,6 +84,15 @@
+             outfp.write('%d,' % c)
+     outfp.write('\n};\n')
+ 
++escape_table = {c: c.decode() if c[0]<128 and chr(c[0]).isprintable() else "\\"+oct(ord(c))[2:].rjust(3, "0")  for c in (c.to_bytes(1, "big") for c in range(256))}
++escape_table.update({b"\\":r"\\", b'"': r'\"', b"?": r"\?"})
++escape_table = tuple(escape_table[key] for key in sorted(escape_table.keys()))
++
++def escape(str):
++    return "".join(escape_table[c] for c in str)
++
++def writecode(outfp, mod, str):
++    outfp.write('unsigned char M_{}[] = "{}";\n'.format(mod, escape(str)))
+ ## def writecode(outfp, mod, str):
+ ##     outfp.write('unsigned char M_%s[%d] = "%s";\n' % (mod, len(str),
+ ##     '\\"'.join(map(lambda s: repr(s)[1:-1], str.split('"')))))
