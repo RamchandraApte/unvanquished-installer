@@ -45,8 +45,13 @@ if __name__ == "__main__":
                 os.chown(path, *args, **kwargs)
         recursivechown(args.installdir, int(args.uid), -1)
         print("started")
-        assert input() == "chown_root"
-        recursivechown(args.installdir, 0, -1)
+        line = input()
+        if line == "chown_root":
+            recursivechown(args.installdir, 0, -1)
+        elif line == "quit":
+            pass
+        else:
+            raise AssertionError("child process gave incorrect output \"{}\"".format(line))
         sys.exit()
 
 app = QtGui.QApplication(sys.argv)
@@ -94,12 +99,8 @@ import traceback
 authAutomaticNext = False
 refs = []
 keep_ref = refs.append
-if not freeze:
-    download_dir_url = "http://127.0.0.1:8080/installer/"
-if freeze:
-    download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
-
-download_dir_url = "http://127.0.0.1:8080/installer/"
+#download_dir_url = "http://127.0.0.1:8080/installer/"
+download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
 
 UNVANQUISHED_VERSION = "0.16"
 STAGES = ("Alpha", "Beta", "RC")
@@ -107,8 +108,8 @@ stages_index = {stage[0].lower(): stage for stage in STAGES}
 
 class NoWaitDestructorProcess(QtCore.QProcess):
     def __del__(self):
-        print("OMG")
-        self.terminate()
+        self.write("quit\n")
+        self.waitForFinished()
     
 class FileDownloader:
     completeFilesSize = 0
@@ -234,10 +235,7 @@ class FileDownloader:
     def start_next_download(self):
         self.timer.stop()
         if self.index >= 0:
-            import time
-            print(time.time())
             shutil.move(self.fp.name, self.filename)
-            print(time.time())
             self.fp.close()
         self.completeFilesSize += int(self.file_infos[self.index]["size"])
         self.index += 1
