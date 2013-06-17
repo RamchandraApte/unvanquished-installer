@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 # TODO BUG: "connecting..." doesn"t show
-freeze = False
+freeze = True
 import sys
+import traceback
 from PyQt4 import QtCore, QtGui, QtNetwork
 
 if __name__ == "__main__":
@@ -90,16 +91,25 @@ import shutil
 import stat
 import traceback
 
-keep_ref = []
+authAutomaticNext = False
+refs = []
+keep_ref = refs.append
 if not freeze:
     download_dir_url = "http://127.0.0.1:8080/installer/"
 if freeze:
     download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
+
+download_dir_url = "http://127.0.0.1:8080/installer/"
+
 UNVANQUISHED_VERSION = "0.16"
 STAGES = ("Alpha", "Beta", "RC")
 stages_index = {stage[0].lower(): stage for stage in STAGES}
 
-
+class NoWaitDestructorProcess(QtCore.QProcess):
+    def __del__(self):
+        print("OMG")
+        self.terminate()
+    
 class FileDownloader:
     completeFilesSize = 0
     average_speed = None
@@ -121,16 +131,26 @@ class FileDownloader:
         if freeze:
             proc = popen_root((sys.executable,
                                os.path.abspath(installdir), str(os.getuid())),)
-        line = proc.stdout.readline()
-
-        if line == b"": # User cancelled dialog
-            wizard.restart()
-        else:
-            assert line == b"started\n", "Child process gave incorrect output {}".format(line)
-            self.start_next_download()
-
+        wizard.setEnabled(False)
+        wizard.back()
+        proc.readyRead.connect(self.readyRead)
+        proc.finished.connect(lambda:wizard.setEnabled(True))
         return proc
 
+    def readyRead(self):
+        global authAutomaticNext
+        if self.install_proc.canReadLine():
+            line = self.install_proc.readLine()
+            if line == b"": # User cancelled dialog
+                wizard.restart()
+            else:
+                assert line == b"started\n", "Child process gave incorrect output {}".format(line)
+                authAutomaticNext = True
+                wizard.next()
+                authAutomaticNext = False
+                self.start_next_download()
+            wizard.setEnabled(True)
+    
     def connected(self, bytes_received, total_bytes):
         self.total_bytes = total_bytes
         self.lasttime = time.monotonic()
@@ -224,7 +244,7 @@ class FileDownloader:
         try:
             self.filename = self.file_infos[self.index]["filename"]
         except IndexError:
-            self.install_proc.stdin.write(b"chown_root\n")
+            self.install_proc.write.write(b"chown_root\n")
             wizard.next()
             return
         filename = self.file_infos[self.index]["filename"]
@@ -247,8 +267,8 @@ ui = ui_installer.Ui_Wizard()
 ui.setupUi(wizard)
 wizard.page(1).setCommitPage(True)
 wizard.setButtonText(wizard.CommitButton, "Install")
-wizard.setPixmap(QtGui.QWizard.WatermarkPixmap, QtGui.QPixmap(
-    "/home/ramchandra/Pictures/picture_1.png"))
+#wizard.setPixmap(QtGui.QWizard.WatermarkPixmap, QtGui.QPixmap(
+#    "/home/ramchandra/Pictures/picture_1.png")) # TODO:Replace with Unvanquished banner.
 install_dirs = {"posix": "test"}
 ui.directoryToInstallInLineEdit.setText(install_dirs[os.name])
 browseIcon = QtGui.QIcon.fromTheme(
@@ -314,7 +334,9 @@ def linux_gui_sudo():
 def popen_root(cmd_args, *args, **kwargs):
     # TODO windos
     if os.name == "posix":
-        return subprocess.Popen((linux_gui_sudo(),) + cmd_args, stderr = subprocess.DEVNULL, stdin=subprocess.PIPE, stdout=subprocess.PIPE, *args, **kwargs)
+        proc = NoWaitDestructorProcess()
+        proc.start(linux_gui_sudo(), cmd_args, *args, **kwargs)
+        return proc
     elif os.name == "win32":
         pass
 
@@ -379,7 +401,7 @@ gen_table(ui.mapsToIncludeTableWidget, (
 
 def start_file_downloader(id_):
     global _, totalSize, installdir, downloader
-    if id_ == 1:
+    if id_ == 1 and not authAutomaticNext:
         wizard.button(QtGui.QWizard.CommitButton).hide()
         selected_rows = tuple(file_info_csv[row] for row in set(
             range.row() for range in ui.mapsToIncludeTableWidget.selectedIndexes()))
@@ -426,5 +448,6 @@ wizard.currentIdChanged.connect(start_file_downloader)
 def main():
     wizard.show()
     app.exec()
+
 if __name__ == "__main__":
     main()

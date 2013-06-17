@@ -15,20 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-
+#TODO: IMPORTANT: check this and portion of installer.py which chowns the install dir for security vulnerabilities!
 import sys
 sys.path=[]
 import tarfile
 import io
-import tempfile
 import subprocess
 import os.path
 import argparse
 import tar_data
 lib_path_env = {"win32": "PATH", "linux": "LD_LIBRARY_PATH"}
+base_dir = os.path.split(sys.executable)[0]
+installerpy = os.path.join(base_dir, "installer.py")
+
 with tarfile.TarFile(fileobj = io.BytesIO(tar_data.data)) as tar_obj:
-    base_dir = os.path.split(sys.executable)[0]
-    tar_obj.extractall(base_dir)
+    if not os.path.exists(installerpy): tar_obj.extractall(base_dir)
     sys.path.append(base_dir)
-    import installer
-    installer.main()
+    exec(open(installerpy).read())
