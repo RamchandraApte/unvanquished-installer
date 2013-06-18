@@ -304,6 +304,12 @@ def linux_gui_sudo():
         "kdesudo", "kdesu", "gksudo", "gksu"))))
     if len(exes) == 1:
         return exes[0]
+    if len(exes) == 2:
+        lastnames = [os.path.split(exe)[1] for exe in exes]
+        if set(lastnames) == {"kdesudo", "kdesu"}:
+            return "kdesudo"
+        if set(lastnames) == {"gksudo", "gksu"}:
+            return "gksudo"
     # Detect the DE and execute gksudo/kdesudo (portions from
     # http://stackoverflow.com/a/2035666)
     desktop_environment = None
