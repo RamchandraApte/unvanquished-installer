@@ -402,6 +402,7 @@ file_info_csv = tuple(csv.DictReader(
 gen_table(ui.mapsToIncludeTableWidget, (
     x for x in file_info_csv if ismap(x["filename"])))
 
+ui.mapsToIncludeTableWidget.selectAll()
 
 def start_file_downloader(id_):
     global _, totalSize, installdir, downloader
