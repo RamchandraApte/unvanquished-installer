@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 # TODO BUG: "connecting..." doesn"t show
-freeze = True
+freeze = False
 import sys
 import traceback
 from PyQt4 import QtCore, QtGui, QtNetwork
@@ -126,17 +126,20 @@ class FileDownloader:
 
     def install(self):
         # TODO in production installer.py should be removed
-        if not freeze:
-            proc = popen_root((sys.executable, os.path.abspath("installer.py"),
-                          os.path.abspath(installdir), str(os.getuid())),)
-        if freeze:
-            proc = popen_root((sys.executable,
-                               os.path.abspath(installdir), str(os.getuid())),)
-        wizard.setEnabled(False)
-        wizard.back()
-        proc.readyRead.connect(self.readyRead)
-        proc.finished.connect(lambda:wizard.setEnabled(True))
-        return proc
+        if not os.access(installdir, os.W_OK):
+            if not freeze:
+                proc = popen_root((sys.executable, os.path.abspath("installer.py"),
+                            os.path.abspath(installdir), str(os.getuid())),)
+            if freeze:
+                proc = popen_root((sys.executable,
+                                os.path.abspath(installdir), str(os.getuid())),)
+            wizard.setEnabled(False)
+            wizard.back()
+            proc.readyRead.connect(self.readyRead)
+            proc.finished.connect(lambda:wizard.setEnabled(True))
+            return proc
+        self.start_next_download()
+        return None
 
     def readyRead(self):
         global authAutomaticNext
@@ -248,7 +251,8 @@ class FileDownloader:
             try:
                 self.filename = self.file_infos[self.index]["filename"]
             except IndexError:
-                self.install_proc.write(b"chown_root\n")
+                if self.install_proc:
+                    self.install_proc.write(b"chown_root\n")
                 wizard.next()
                 return
             self.fp = open(os.path.join(self.base_dir, "{}.tmp".format(self.filename)), "ab")
@@ -272,7 +276,8 @@ wizard = QtGui.QWizard()
 ui = ui_installer.Ui_Wizard()
 ui.setupUi(wizard)
 wizard.page(1).setCommitPage(True)
-wizard.setButtonText(wizard.CommitButton, "Install")
+wizard.setButtonText(wizard.CommitButton, "(Will install automatically after downloading has finished)")
+wizard.button(wizard.CommitButton).setEnabled(False)
 #wizard.setPixmap(QtGui.QWizard.WatermarkPixmap, QtGui.QPixmap(
 #    "/home/ramchandra/Pictures/picture_1.png")) # TODO:Replace with Unvanquished banner.
 install_dirs = {"posix": "test"}
