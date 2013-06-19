@@ -166,7 +166,6 @@ class FileDownloader:
             ui.currentFileProgressBar.setValue)
         self.currentreply.downloadProgress.connect(self.download_progress)
         self.currentreply.readyRead.connect(self.write_data)
-        self.currentreply.finished.connect(self.start_next_download)
 
     @property
     def totalDownloaded(self):
@@ -235,16 +234,25 @@ class FileDownloader:
     def start_next_download(self):
         self.timer.stop()
         if self.index >= 0:
-            shutil.move(self.fp.name, self.filename)
-            self.fp.close()
-        self.completeFilesSize += int(self.file_infos[self.index]["size"])
-        self.index += 1
-        try:
-            self.filename = self.file_infos[self.index]["filename"]
-        except IndexError:
-            self.install_proc.write.write(b"chown_root\n")
-            wizard.next()
-            return
+            possibleRedirect = self.currentreply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
+            if possibleRedirect:
+                url = self.currentreply.url().resolved(possibleRedirect)
+            else:
+                shutil.move(self.fp.name, self.filename)
+                self.fp.close()
+        else:
+            possibleRedirect = None
+        if not possibleRedirect:
+            self.completeFilesSize += int(self.file_infos[self.index]["size"])
+            self.index += 1
+            try:
+                self.filename = self.file_infos[self.index]["filename"]
+            except IndexError:
+                self.install_proc.write(b"chown_root\n")
+                wizard.next()
+                return
+            self.fp = open(os.path.join(self.base_dir, "{}.tmp".format(self.filename)), "ab")
+            url = QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl(self.filename))
         filename = self.file_infos[self.index]["filename"]
         ui.currentFileName.setText(str(self.file_infos[self.index]["name"] if ismap(filename) else self.file_infos[self.index]["filename"]))
         ui.totalFileProgress.setText("{} out of {}".format(
@@ -253,12 +261,12 @@ class FileDownloader:
         ui.fileInfoTableWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         ui.fileInfoTableWidget.selectRow(self.index)
         ui.fileInfoTableWidget.setSelectionMode(oldSelectionMode)
-        self.currentreply = self.manager.get(
-            QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url + self.filename)))
-        self.fp = open(os.path.join(
-            self.base_dir, "{}.tmp".format(self.filename)), "ab")
+        request = QtNetwork.QNetworkRequest(url)
+        request.setRawHeader("User-Agent", b"Unvanquished Installer") 
+        self.currentreply = self.manager.get(request)
         # if self.fp.tell() ==
         self.currentreply.downloadProgress.connect(self.connected)
+        self.currentreply.finished.connect(self.start_next_download)
 
 wizard = QtGui.QWizard()
 ui = ui_installer.Ui_Wizard()
