@@ -33,6 +33,9 @@
    <set>QWizard::NoCancelButton</set>
   </property>
   <widget class="QWizardPage" name="wizardPage1">
+   <property name="title">
+    <string>Select the Maps To Include</string>
+   </property>
    <property name="subTitle">
     <string/>
    </property>
