@@ -241,7 +241,6 @@ class FileDownloader:
             if possibleRedirect:
                 url = self.currentreply.url().resolved(possibleRedirect)
             else:
-                shutil.move(self.fp.name, self.filename)
                 self.fp.close()
         else:
             possibleRedirect = None
@@ -255,7 +254,7 @@ class FileDownloader:
                     self.install_proc.write(b"chown_root\n")
                 wizard.next()
                 return
-            self.fp = open(os.path.join(self.base_dir, "{}.tmp".format(self.filename)), "ab")
+            self.fp = open(os.path.join(self.base_dir, self.filename), "ab")
             url = QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl(self.filename))
         filename = self.file_infos[self.index]["filename"]
         ui.currentFileName.setText(str(self.file_infos[self.index]["name"] if ismap(filename) else self.file_infos[self.index]["filename"]))
