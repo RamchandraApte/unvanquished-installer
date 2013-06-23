@@ -81,7 +81,6 @@ def excepthook(exctype, value, tb):
 if __name__=="__main__": sys.excepthook = excepthook
 import shutil
 import subprocess
-from urllib.request import urlopen
 import glob
 import datetime
 import ui_installer
@@ -106,6 +105,28 @@ UNVANQUISHED_VERSION = "0.16"
 STAGES = ("Alpha", "Beta", "RC")
 stages_index = {stage[0].lower(): stage for stage in STAGES}
 
+class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
+    trueFinished = QtCore.pyqtSignal(QtNetwork.QNetworkReply)
+    downloadProgress = QtCore.pyqtSignal("qint64", "qint64" )
+    def __init__(self):
+        super().__init__()
+        super().finished.connect(self.tryRedirect)
+
+    def tryRedirect(self, reply, *args, **kwargs):
+            possibleRedirect = reply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
+            if possibleRedirect:
+                reply = self.get(QtNetwork.QNetworkRequest(reply.url().resolved(possibleRedirect)))
+                reply.downloadProgress.connect(self.downloadProgress)
+                self.currentreply = reply
+            else:
+                self.trueFinished.emit(reply, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        request.setRawHeader("User-Agent", b"Unvanquished Installer") 
+        reply = super().get(request, *args, **kwargs)
+        reply.downloadProgress.connect(self.downloadProgress)
+        return reply
+
 class NoWaitDestructorProcess(QtCore.QProcess):
     def __del__(self):
         self.write("quit\n")
@@ -115,13 +136,18 @@ class FileDownloader:
     completeFilesSize = 0
     average_speed = None
     index = -1
-    manager = QtNetwork.QNetworkAccessManager()
+    manager = RedirectingQNetworkAccessManager()
 
     def __init__(self, file_infos):
         self.file_infos = file_infos
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_info)
         self.base_dir = os.path.join(installdir, "base")
+        self.manager.trueFinished.connect(self.start_next_download)
+        self.manager.downloadProgress.connect(self.connected)
+        self.manager.downloadProgress.connect(
+            ui.currentFileProgressBar.setValue)
+        self.manager.downloadProgress.connect(self.download_progress)
         self.install_proc = self.install()
 
     def install(self):
@@ -138,7 +164,7 @@ class FileDownloader:
             proc.readyRead.connect(self.readyRead)
             proc.finished.connect(lambda:wizard.setEnabled(True))
             return proc
-        self.start_next_download()
+        self.start_next_download(None)
         return None
 
     def readyRead(self):
@@ -163,12 +189,8 @@ class FileDownloader:
         # ui.downloadProgressTableWidget.setItem(self.index, 3,
         # QtGui.QTableWidgetItem(size))
         ui.currentFileProgressBar.setMaximum(size)
-        self.download_progress(bytes_received, size)
-        self.currentreply.downloadProgress.disconnect()
-        self.currentreply.downloadProgress.connect(
-            ui.currentFileProgressBar.setValue)
-        self.currentreply.downloadProgress.connect(self.download_progress)
-        self.currentreply.readyRead.connect(self.write_data)
+        self.manager.downloadProgress.disconnect(self.connected)
+        self.manager.currentreply.readyRead.connect(self.write_data)
 
     @property
     def totalDownloaded(self):
@@ -232,30 +254,24 @@ class FileDownloader:
             1)
 
     def write_data(self):
-        self.fp.write(self.currentreply.readAll())
+        self.fp.write(self.manager.currentreply.readAll())
 
-    def start_next_download(self):
+    def start_next_download(self, reply):
         self.timer.stop()
         if self.index >= 0:
-            possibleRedirect = self.currentreply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
-            if possibleRedirect:
-                url = self.currentreply.url().resolved(possibleRedirect)
-            else:
                 self.fp.close()
-        else:
-            possibleRedirect = None
-        if not possibleRedirect:
-            self.completeFilesSize += int(self.file_infos[self.index]["size"])
-            self.index += 1
-            try:
-                self.filename = self.file_infos[self.index]["filename"]
-            except IndexError:
-                if self.install_proc:
-                    self.install_proc.write(b"chown_root\n")
-                wizard.next()
-                return
-            self.fp = open(os.path.join(self.base_dir, self.filename), "ab")
-            url = QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl(self.filename))
+
+        self.completeFilesSize += int(self.file_infos[self.index]["size"])
+        self.index += 1
+        try:
+            self.filename = self.file_infos[self.index]["filename"]
+        except IndexError:
+            if self.install_proc:
+                self.install_proc.write(b"chown_root\n")
+            wizard.next()
+            return
+        self.fp = open(os.path.join(self.base_dir, self.filename), "ab")
+        url = QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl(self.filename))
         filename = self.file_infos[self.index]["filename"]
         ui.currentFileName.setText(str(self.file_infos[self.index]["name"] if ismap(filename) else self.file_infos[self.index]["filename"]))
         ui.totalFileProgress.setText("{} out of {}".format(
@@ -265,11 +281,7 @@ class FileDownloader:
         ui.fileInfoTableWidget.selectRow(self.index)
         ui.fileInfoTableWidget.setSelectionMode(oldSelectionMode)
         request = QtNetwork.QNetworkRequest(url)
-        request.setRawHeader("User-Agent", b"Unvanquished Installer") 
-        self.currentreply = self.manager.get(request)
-        # if self.fp.tell() ==
-        self.currentreply.downloadProgress.connect(self.connected)
-        self.currentreply.finished.connect(self.start_next_download)
+        self.manager.get(request)
 
 wizard = QtGui.QWizard()
 ui = ui_installer.Ui_Wizard()
@@ -393,10 +405,10 @@ def map_info(filename, row_index):
     return name, version, human_readable_size(int(size))
 
 
-def gen_table(tableWidget, file_info):
+def gen_table(tableWidget, file_info_csv):
     tableWidget.setRowCount(1000)
     tableWidget.setColumnCount(1000)
-    for row_index, row in enumerate(file_info):
+    for row_index, row in enumerate(file_info_csv):
         for column_index, value in enumerate(map_info(row["filename"], row_index)):
             if isinstance(value, str):
                 tableWidget.setItem(
@@ -406,15 +418,6 @@ def gen_table(tableWidget, file_info):
 
     tableWidget.setRowCount(row_index + 1)
     tableWidget.setColumnCount(column_index + 1)
-
-with urlopen(download_dir_url + "file_info.csv") as f:
-    file_info = f.read().decode()
-file_info_csv = tuple(csv.DictReader(
-    file_info.splitlines(), ("filename", "name", "size", "TODO"), dialect="excel-tab"))
-gen_table(ui.mapsToIncludeTableWidget, (
-    x for x in file_info_csv if ismap(x["filename"])))
-
-ui.mapsToIncludeTableWidget.selectAll()
 
 def start_file_downloader(id_):
     global _, totalSize, installdir, downloader
@@ -459,12 +462,18 @@ def on_finish_button():
     if ui.runUnvAfterFinish.isChecked():
         subprocess.Popen(os.path.join(installdir, "unvanquished.bin"))
 
-wizard.button(wizard.FinishButton).clicked.connect(on_finish_button)
-
-wizard.currentIdChanged.connect(start_file_downloader)
-def main():
+def main(reply):
+    global file_info_csv
+    file_info = bytes(reply.readAll()).decode("ascii")
+    file_info_csv = tuple(csv.DictReader(file_info.splitlines(), ("filename", "name", "size", "TODO"), dialect="excel-tab"))
+    gen_table(ui.mapsToIncludeTableWidget, (
+        x for x in file_info_csv if ismap(x["filename"])))
+    ui.mapsToIncludeTableWidget.selectAll()
+    wizard.button(wizard.FinishButton).clicked.connect(on_finish_button)
+    wizard.currentIdChanged.connect(start_file_downloader)
     wizard.show()
-    app.exec()
 
-if __name__ == "__main__":
-    main()
+manager = RedirectingQNetworkAccessManager()
+manager.trueFinished.connect(main)
+manager.get(QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl("file_info.csv"))))
+if __name__ == "__main__": app.exec()
