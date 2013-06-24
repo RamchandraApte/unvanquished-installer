@@ -462,13 +462,20 @@ def on_finish_button():
     if ui.runUnvAfterFinish.isChecked():
         subprocess.Popen(os.path.join(installdir, "unvanquished.bin"))
 
+def itemSelectionChanged():
+    rows = set(range.row() for range in ui.mapsToIncludeTableWidget.selectedIndexes())
+    sizeOfSelectedMaps = sum(int(file_info_csv[row]["size"]) for row in rows)
+    ui.sizeOfSelectedMapsLabel.setText(selectedMapsFormat.format(human_readable_size(sizeOfSelectedMaps)))
+
 def main(reply):
-    global file_info_csv
+    global file_info_csv, selectedMapsFormat
     file_info = bytes(reply.readAll()).decode("ascii")
     file_info_csv = tuple(csv.DictReader(file_info.splitlines(), ("filename", "name", "size", "TODO"), dialect="excel-tab"))
     gen_table(ui.mapsToIncludeTableWidget, (
         x for x in file_info_csv if ismap(x["filename"])))
     ui.mapsToIncludeTableWidget.selectAll()
+    ui.mapsToIncludeTableWidget.itemSelectionChanged.connect(itemSelectionChanged)
+    selectedMapsFormat = ui.sizeOfSelectedMapsLabel.text()
     wizard.button(wizard.FinishButton).clicked.connect(on_finish_button)
     wizard.currentIdChanged.connect(start_file_downloader)
     wizard.show()

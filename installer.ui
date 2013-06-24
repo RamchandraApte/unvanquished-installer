@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../.designer/Pictures/picture_1.png</normaloff>../.designer/Pictures/picture_1.png</iconset>
+    <normaloff>../.designer/.designer/Pictures/picture_1.png</normaloff>../.designer/.designer/Pictures/picture_1.png</iconset>
   </property>
   <property name="inputMethodHints">
    <set>Qt::ImhUrlCharactersOnly</set>
@@ -47,17 +47,27 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="1">
-     <widget class="QLineEdit" name="directoryToInstallInLineEdit">
-      <property name="inputMethodHints">
-       <set>Qt::ImhNoPredictiveText|Qt::ImhUrlCharactersOnly</set>
-      </property>
-     </widget>
-    </item>
     <item row="4" column="0">
      <widget class="QLabel" name="directoryToInstallInLabel">
       <property name="text">
        <string>Directory to install in:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QCheckBox" name="allCheckBox">
+      <property name="text">
+       <string>All</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLineEdit" name="directoryToInstallInLineEdit">
+      <property name="inputMethodHints">
+       <set>Qt::ImhNoPredictiveText|Qt::ImhUrlCharactersOnly</set>
       </property>
      </widget>
     </item>
@@ -113,13 +123,10 @@
       </column>
      </widget>
     </item>
-    <item row="2" column="0">
-     <widget class="QCheckBox" name="allCheckBox">
+    <item row="5" column="0" colspan="2">
+     <widget class="QLabel" name="sizeOfSelectedMapsLabel">
       <property name="text">
-       <string>All</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
+       <string>Size of maps selected: {}</string>
       </property>
      </widget>
     </item>
@@ -189,7 +196,7 @@
        <number>3</number>
       </property>
       <attribute name="horizontalHeaderVisible">
-       <bool>true</bool>
+       <bool>false</bool>
       </attribute>
       <attribute name="verticalHeaderVisible">
        <bool>false</bool>
