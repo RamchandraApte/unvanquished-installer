@@ -23,6 +23,7 @@ import io
 import subprocess
 import os.path
 import argparse
+import codecs
 import tar_data
 lib_path_env = {"win32": "PATH", "linux": "LD_LIBRARY_PATH"}
 base_dir = os.path.split(sys.executable)[0]
@@ -31,4 +32,4 @@ installerpy = os.path.join(base_dir, "installer.py")
 with tarfile.TarFile(fileobj = io.BytesIO(tar_data.data)) as tar_obj:
     if not os.path.exists(installerpy): tar_obj.extractall(base_dir)
     sys.path.append(base_dir)
-    exec(open(installerpy).read())
+    exec(open(installerpy, encoding = "utf8").read())

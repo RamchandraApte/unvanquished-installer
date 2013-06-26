@@ -31,7 +31,7 @@ tar_data.py: gen_tar_data.py installer.py dist
 	$(LN) installer.py dist/installer.py
 	$(PYTHON) gen_tar_data.py
 tar_dec_dist: tar_data.py tar_dec.py installer.py
-	$(PYTHON) $(PY_SRC_DIR)/Tools/freeze/freeze.py -X PyQt4 -o tar_dec_dist tar_dec.py -m installer -m encodings.idna -m encodings.ascii
+	$(PYTHON) $(PY_SRC_DIR)/Tools/freeze/freeze.py -X PyQt4 -o tar_dec_dist tar_dec.py -m installer -m encodings.idna -m encodings.ascii -m encodings.utf_8
 
 compile: tar_dec_dist
 	$(MAKE) -C tar_dec_dist

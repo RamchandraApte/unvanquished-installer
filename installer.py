@@ -55,7 +55,6 @@ if __name__ == "__main__":
         sys.exit()
 
 app = QtGui.QApplication(sys.argv)
-app.setStyle(QtGui.QStyleFactory.create("oxygen"))
 translator = QtCore.QTranslator()
 translator.load("hellotr_la")
 app.installTranslator(translator)
