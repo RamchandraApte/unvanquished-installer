@@ -178,7 +178,7 @@ class FileDownloader:
                 authAutomaticNext = True
                 wizard.next()
                 authAutomaticNext = False
-                self.start_next_download()
+                self.start_next_download(None)
             wizard.setEnabled(True)
     
     def connected(self, bytes_received, total_bytes):
@@ -377,7 +377,7 @@ def human_readable_size(size):
         integral = 0
     else:
         fraction, integral = math.modf(math.log(size, 1024))
-    return "{n:.1f} {magnitude}".format(n=1024 ** fraction, magnitude=MAGNITUDES[int(integral)])
+    return "{n:.1f} {magnitude}".format(n=1024 ** fraction if fraction else 0, magnitude=MAGNITUDES[int(integral)])
 
 
 def ismap(filename):
@@ -474,8 +474,9 @@ def main(reply):
     gen_table(ui.mapsToIncludeTableWidget, (
         x for x in file_info_csv if ismap(x["filename"])))
     ui.mapsToIncludeTableWidget.selectAll()
-    ui.mapsToIncludeTableWidget.itemSelectionChanged.connect(itemSelectionChanged)
     selectedMapsFormat = ui.sizeOfSelectedMapsLabel.text()
+    ui.mapsToIncludeTableWidget.itemSelectionChanged.connect(itemSelectionChanged)
+    itemSelectionChanged()
     wizard.button(wizard.FinishButton).clicked.connect(on_finish_button)
     wizard.currentIdChanged.connect(start_file_downloader)
     wizard.show()
