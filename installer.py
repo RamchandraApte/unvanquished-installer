@@ -89,10 +89,10 @@ import os
 import time
 import tempfile
 import math
-import itertools
 import shutil
 import stat
 import traceback
+import functools
 
 authAutomaticNext = False
 refs = []
@@ -480,7 +480,29 @@ def main(reply):
     wizard.currentIdChanged.connect(start_file_downloader)
     wizard.show()
 
+net_errmsg = "There was a problem downloading {}. Please check your internet connection."
+
+def file_info_net_err(reply):
+    if reply.error():
+        msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"), detailedText = reply.errorString(), 
+                                   standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort)
+        button = msgbox.exec()
+        if button == QtGui.QMessageBox.Retry:
+            get_file_info()
+        else:
+            app.exit(1)
+
+    else:
+        app.setQuitOnLastWindowClosed(True)
+        main(reply)
+
 manager = RedirectingQNetworkAccessManager()
-manager.trueFinished.connect(main)
-manager.get(QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl("file_info.csv"))))
-if __name__ == "__main__": app.exec()
+manager.trueFinished.connect(file_info_net_err)
+def get_file_info():
+    manager.get(QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl("file_info.csv"))))
+
+get_file_info()
+
+if __name__ == "__main__": 
+    app.setQuitOnLastWindowClosed(False)
+    sys.exit(app.exec())

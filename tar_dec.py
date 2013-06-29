@@ -23,7 +23,6 @@ import io
 import subprocess
 import os.path
 import argparse
-import codecs
 import tar_data
 lib_path_env = {"win32": "PATH", "linux": "LD_LIBRARY_PATH"}
 base_dir = os.path.split(sys.executable)[0]
