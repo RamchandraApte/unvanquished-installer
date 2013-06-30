@@ -133,22 +133,34 @@ class NoWaitDestructorProcess(QtCore.QProcess):
     
 class FileDownloader:
     completeFilesSize = 0
-    average_speed = None
+    average_speed = ...
     index = -1
     manager = RedirectingQNetworkAccessManager()
+    fp = ...
 
     def __init__(self, file_infos):
         self.file_infos = file_infos
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_info)
         self.base_dir = os.path.join(installdir, "base")
+        self.manager.trueFinished.connect(self.file_net_err)
         self.manager.trueFinished.connect(self.start_next_download)
         self.manager.downloadProgress.connect(self.connected)
         self.manager.downloadProgress.connect(
             ui.currentFileProgressBar.setValue)
         self.manager.downloadProgress.connect(self.download_progress)
         self.install_proc = self.install()
-
+        
+    def file_net_err(self, reply):
+        if reply.error():
+            msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("a file needed by Unvanquished"), detailedText = reply.errorString(), 
+                                    standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort)
+            button = msgbox.exec()
+            if button == QtGui.QMessageBox.Retry:
+                self.index -= 1
+            else:
+                app.exit(1)
+    
     def install(self):
         # TODO in production installer.py should be removed
         if not os.access(installdir, os.W_OK):
@@ -237,7 +249,7 @@ class FileDownloader:
             (current_time - self.lasttime)
         # print(current_time - self.lasttime, bytes_received -
         # self.last_bytes_received, self.current_speed)
-        if self.average_speed is not None:
+        if self.average_speed != ...:
             self.average_speed = SMOOTHING_FACTOR * \
                 self.current_speed + (1 -
                                       SMOOTHING_FACTOR) * self.average_speed
@@ -257,8 +269,8 @@ class FileDownloader:
 
     def start_next_download(self, reply):
         self.timer.stop()
-        if self.index >= 0:
-                self.fp.close()
+        if self.fp != ...:
+            self.fp.close()
 
         self.completeFilesSize += int(self.file_infos[self.index]["size"])
         self.index += 1
