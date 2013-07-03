@@ -164,7 +164,7 @@ class FileDownloader:
     
     def install(self):
         # TODO in production installer.py should be removed
-        if not os.access(installdir, os.W_OK):
+        if not os.access(os.path.split(os.path.abspath(installdir))[0], os.W_OK|os.X_OK):
             if not freeze:
                 proc = popen_root((sys.executable, os.path.abspath("installer.py"),
                             os.path.abspath(installdir), str(os.getuid())),)
@@ -176,6 +176,8 @@ class FileDownloader:
             proc.readyRead.connect(self.readyRead)
             proc.finished.connect(lambda:wizard.setEnabled(True))
             return proc
+        else:
+            os.makedirs(self.base_dir)
         self.start_next_download(None)
         return None
 
