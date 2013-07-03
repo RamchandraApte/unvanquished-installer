@@ -461,14 +461,12 @@ def itemSelectionChanged():
     ui.allCheckBox.blockSignals(signalsBlocked)
 
 def stateChanged(state):
-    signalsBlocked = ui.mapsToIncludeTableWidget.blockSignals(True)
     if state == QtCore.Qt.Checked:
         ui.mapsToIncludeTableWidget.selectAll()
     elif state == QtCore.Qt.Unchecked:
         ui.mapsToIncludeTableWidget.clearSelection()
     elif state == QtCore.Qt.PartiallyChecked:
         ui.allCheckBox.setCheckState(QtCore.Qt.Checked)
-    ui.mapsToIncludeTableWidget.blockSignals(signalsBlocked)
 
 
 class InstallDirValidator(QtGui.QValidator):
