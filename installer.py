@@ -498,7 +498,7 @@ def main(reply):
     file_system_completer.setModel(file_system_model)
     ui.directoryToInstallInLineEdit.setCompleter(file_system_completer)
     ui.directoryToInstallInLineEdit.setValidator(InstallDirValidator())
-    ui.directoryToInstallInLineEdit.setText(install_dirs[os.name])
+    wizard.page(0).initializePage = lambda: ui.directoryToInstallInLineEdit.setText(install_dirs[os.name])
     wizard.page(0).registerField("test123*", ui.directoryToInstallInLineEdit)
     wizard.button(wizard.FinishButton).clicked.connect(on_finish_button)
     wizard.currentIdChanged.connect(start_file_downloader)
