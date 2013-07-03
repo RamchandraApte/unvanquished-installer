@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # TODO BUG: "connecting..." doesn"t show
 freeze = False
 import sys
+import sip
 import traceback
 from PyQt4 import QtCore, QtGui, QtNetwork
 
@@ -97,7 +98,7 @@ import functools
 authAutomaticNext = False
 refs = []
 keep_ref = refs.append
-#download_dir_url = "http://127.0.0.1:8080/installer/"
+download_dir_url = "http://127.0.0.1:8080/installer/"
 download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
 
 UNVANQUISHED_VERSION = "0.16"
@@ -294,21 +295,6 @@ class FileDownloader:
         request = QtNetwork.QNetworkRequest(url)
         self.manager.get(request)
 
-wizard = QtGui.QWizard()
-ui = ui_installer.Ui_Wizard()
-ui.setupUi(wizard)
-wizard.page(1).setCommitPage(True)
-wizard.setButtonText(wizard.CommitButton, "(Will install automatically after downloading has finished)")
-wizard.button(wizard.CommitButton).setEnabled(False)
-#wizard.setPixmap(QtGui.QWizard.WatermarkPixmap, QtGui.QPixmap(
-#    "/home/ramchandra/Pictures/picture_1.png")) # TODO:Replace with Unvanquished banner.
-install_dirs = {"posix": "test"}
-ui.directoryToInstallInLineEdit.setText(install_dirs[os.name])
-browseIcon = QtGui.QIcon.fromTheme(
-    "folder-open", QtGui.QIcon("folder-open.png"))
-ui.browseButton.setIcon(browseIcon)
-
-
 def get_dir_and_update_text():
     dialog = QtGui.QFileDialog()
     dialog.setFileMode(QtGui.QFileDialog.Directory)
@@ -316,21 +302,6 @@ def get_dir_and_update_text():
     if dialog.exec():
         dir_ = dialog.selectedFiles()[0]
         ui.directoryToInstallInLineEdit.setText(dir_)
-ui.browseButton.clicked.connect(get_dir_and_update_text)
-
-
-def stateChanged(checked):
-    if checked == QtCore.Qt.Checked:
-        ui.mapsToIncludeTableWidget.selectAll()
-    elif checked == QtCore.Qt.Unchecked:
-        ui.mapsToIncludeTableWidget.clearSelection()
-ui.allCheckBox.stateChanged.connect(stateChanged)
-ui.fileInfoCheckBox.stateChanged.connect(ui.fileInfoTableWidget.setVisible)
-ui.fileInfoTableWidget.hide()
-mirror = "auto"
-"&use_mirror={mirror}"
-#    subprocess.Popen(path+cmd_args+*args)
-
 
 def linux_gui_sudo():
     exe = shutil.which("pkexec")
@@ -478,8 +449,41 @@ def itemSelectionChanged():
     sizeOfSelectedMaps = sum(int(file_info_csv[row]["size"]) for row in rows)
     ui.sizeOfSelectedMapsLabel.setText(selectedMapsFormat.format(human_readable_size(sizeOfSelectedMaps)))
 
+class InstallDirValidator(QtGui.QValidator):
+    def validate(self, string, pos):
+        if not os.path.exists(string):
+            ui.invalidInstallDirLabel.setText("")
+            return self.Acceptable, string, pos
+        else:
+            ui.invalidInstallDirLabel.setText('<html><head/><body><p><span style=" color:#ff0000;">Sorry, please enter a non-existing directory for the installation directory.</span></p></body></html>')
+            return self.Intermediate, string, pos
+
 def main(reply):
-    global file_info_csv, selectedMapsFormat
+    global file_info_csv, selectedMapsFormat, ui, wizard
+    wizard = QtGui.QWizard()
+    ui = ui_installer.Ui_Wizard()
+    ui.setupUi(wizard)
+    wizard.page(1).setCommitPage(True)
+    wizard.setButtonText(wizard.CommitButton, "(Will install automatically after downloading has finished)")
+    wizard.button(wizard.CommitButton).setEnabled(False)
+    #wizard.setPixmap(QtGui.QWizard.WatermarkPixmap, QtGui.QPixmap(
+    #    "/home/ramchandra/Pictures/picture_1.png")) # TODO:Replace with Unvanquished banner.
+    install_dirs = {"posix": "test"}
+    browseIcon = QtGui.QIcon.fromTheme(
+        "folder-open", QtGui.QIcon("folder-open.png"))
+    ui.browseButton.clicked.connect(get_dir_and_update_text)
+    ui.browseButton.setIcon(browseIcon)
+
+    def stateChanged(checked):
+        if checked == QtCore.Qt.Checked:
+            ui.mapsToIncludeTableWidget.selectAll()
+        elif checked == QtCore.Qt.Unchecked:
+            ui.mapsToIncludeTableWidget.clearSelection()
+    ui.allCheckBox.stateChanged.connect(stateChanged)
+    ui.fileInfoCheckBox.stateChanged.connect(ui.fileInfoTableWidget.setVisible)
+    ui.fileInfoTableWidget.hide()
+    mirror = "auto"
+
     file_info = bytes(reply.readAll()).decode("ascii")
     file_info_csv = tuple(csv.DictReader(file_info.splitlines(), ("filename", "name", "size", "TODO"), dialect="excel-tab"))
     gen_table(ui.mapsToIncludeTableWidget, (
@@ -493,6 +497,9 @@ def main(reply):
     file_system_model.setRootPath("")
     file_system_completer.setModel(file_system_model)
     ui.directoryToInstallInLineEdit.setCompleter(file_system_completer)
+    ui.directoryToInstallInLineEdit.setValidator(InstallDirValidator())
+    ui.directoryToInstallInLineEdit.setText(install_dirs[os.name])
+    wizard.page(0).registerField("test123*", ui.directoryToInstallInLineEdit)
     wizard.button(wizard.FinishButton).clicked.connect(on_finish_button)
     wizard.currentIdChanged.connect(start_file_downloader)
     wizard.show()
@@ -501,8 +508,8 @@ net_errmsg = "There was a problem downloading {}. Please check your internet con
 
 def file_info_net_err(reply):
     if reply.error():
-        msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"), detailedText = reply.errorString(), 
-                                   standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort)
+        msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"), 
+                                   detailedText = reply.errorString(), standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort)
         button = msgbox.exec()
         if button == QtGui.QMessageBox.Retry:
             get_file_info()
@@ -522,4 +529,5 @@ get_file_info()
 
 if __name__ == "__main__": 
     app.setQuitOnLastWindowClosed(False)
+    sip.setdestroyonexit(False)
     sys.exit(app.exec())
