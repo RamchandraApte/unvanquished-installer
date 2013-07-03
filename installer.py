@@ -471,7 +471,8 @@ def stateChanged(state):
 
 class InstallDirValidator(QtGui.QValidator):
     def validate(self, string, pos):
-        if not os.path.exists(string):
+        #TODO check for invalid filename characters
+        if not os.path.exists(string) or string == "":
             ui.invalidInstallDirLabel.setText("")
             return self.Acceptable, string, pos
         else:
