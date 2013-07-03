@@ -445,9 +445,29 @@ def on_finish_button():
         subprocess.Popen(os.path.join(installdir, "unvanquished.bin"))
 
 def itemSelectionChanged():
+    signalsBlocked = ui.allCheckBox.blockSignals(True)
     rows = set(range.row() for range in ui.mapsToIncludeTableWidget.selectedIndexes())
     sizeOfSelectedMaps = sum(int(file_info_csv[row]["size"]) for row in rows)
     ui.sizeOfSelectedMapsLabel.setText(selectedMapsFormat.format(human_readable_size(sizeOfSelectedMaps)))
+    if len(rows) == ui.mapsToIncludeTableWidget.rowCount():
+        state = QtCore.Qt.Checked
+    elif len(rows) == 0:
+        state = QtCore.Qt.Unchecked
+    else:
+        state = QtCore.Qt.PartiallyChecked
+    ui.allCheckBox.setCheckState(state)
+    ui.allCheckBox.blockSignals(signalsBlocked)
+
+def stateChanged(state):
+    signalsBlocked = ui.mapsToIncludeTableWidget.blockSignals(True)
+    if state == QtCore.Qt.Checked:
+        ui.mapsToIncludeTableWidget.selectAll()
+    elif state == QtCore.Qt.Unchecked:
+        ui.mapsToIncludeTableWidget.clearSelection()
+    elif state == QtCore.Qt.PartiallyChecked:
+        ui.allCheckBox.setCheckState(QtCore.Qt.Checked)
+    ui.mapsToIncludeTableWidget.blockSignals(signalsBlocked)
+
 
 class InstallDirValidator(QtGui.QValidator):
     def validate(self, string, pos):
@@ -457,6 +477,7 @@ class InstallDirValidator(QtGui.QValidator):
         else:
             ui.invalidInstallDirLabel.setText('<html><head/><body><p><span style=" color:#ff0000;">Sorry, please enter a non-existing directory for the installation directory.</span></p></body></html>')
             return self.Intermediate, string, pos
+
 
 def main(reply):
     global file_info_csv, selectedMapsFormat, ui, wizard
@@ -474,11 +495,6 @@ def main(reply):
     ui.browseButton.clicked.connect(get_dir_and_update_text)
     ui.browseButton.setIcon(browseIcon)
 
-    def stateChanged(checked):
-        if checked == QtCore.Qt.Checked:
-            ui.mapsToIncludeTableWidget.selectAll()
-        elif checked == QtCore.Qt.Unchecked:
-            ui.mapsToIncludeTableWidget.clearSelection()
     ui.allCheckBox.stateChanged.connect(stateChanged)
     ui.fileInfoCheckBox.stateChanged.connect(ui.fileInfoTableWidget.setVisible)
     ui.fileInfoTableWidget.hide()
