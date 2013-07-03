@@ -450,7 +450,8 @@ def itemSelectionChanged():
     signalsBlocked = ui.allCheckBox.blockSignals(True)
     rows = set(range.row() for range in ui.mapsToIncludeTableWidget.selectedIndexes())
     sizeOfSelectedMaps = sum(int(file_info_csv[row]["size"]) for row in rows)
-    ui.sizeOfSelectedMapsLabel.setText(selectedMapsFormat.format(human_readable_size(sizeOfSelectedMaps)))
+    ui.sizeOfSelectedMapsLabel.setText(sizeOfSelectedMapsFormat.format(human_readable_size(sizeOfSelectedMaps)))
+    ui.totalDownloadSizeLabel.setText(totalDownloadSizeFormat.format(human_readable_size(sizeOfSelectedMaps+sizeOfRequiredFiles)))
     if len(rows) == ui.mapsToIncludeTableWidget.rowCount():
         state = QtCore.Qt.Checked
     elif len(rows) == 0:
@@ -481,7 +482,7 @@ class InstallDirValidator(QtGui.QValidator):
 
 
 def main(reply):
-    global file_info_csv, selectedMapsFormat, ui, wizard
+    global file_info_csv, sizeOfSelectedMapsFormat, sizeOfRequiredFiles, totalDownloadSizeFormat, ui, wizard
     wizard = QtGui.QWizard()
     ui = ui_installer.Ui_Wizard()
     ui.setupUi(wizard)
@@ -505,10 +506,13 @@ def main(reply):
     file_info_csv = tuple(csv.DictReader(file_info.splitlines(), ("filename", "name", "size", "TODO"), dialect="excel-tab"))
     gen_table(ui.mapsToIncludeTableWidget, (
         x for x in file_info_csv if ismap(x["filename"])))
-    ui.mapsToIncludeTableWidget.selectAll()
-    selectedMapsFormat = ui.sizeOfSelectedMapsLabel.text()
+    sizeOfSelectedMapsFormat = ui.sizeOfSelectedMapsLabel.text()
+    sizeOfRequiredFilesFormat = ui.sizeOfRequiredFilesLabel.text()
+    totalDownloadSizeFormat = ui.totalDownloadSizeLabel.text()
+    sizeOfRequiredFiles = sum(int(row["size"]) for row in file_info_csv)
+    ui.sizeOfRequiredFilesLabel.setText(sizeOfRequiredFilesFormat.format(human_readable_size(sizeOfRequiredFiles)))
     ui.mapsToIncludeTableWidget.itemSelectionChanged.connect(itemSelectionChanged)
-    itemSelectionChanged()
+    ui.allCheckBox.setCheckState(QtCore.Qt.PartiallyChecked)
     file_system_completer = QtGui.QCompleter()
     file_system_model = QtGui.QFileSystemModel()
     file_system_model.setRootPath("")
