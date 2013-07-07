@@ -556,7 +556,7 @@ def get_file_info():
     manager.trueFinished.connect(timer.stop)
     manager.trueFinished.connect(progress_dialog.hide)
     keep_ref(timer)
-    manager.get(QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl("file_info.sv"))))
+    manager.get(QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl("file_info.csv"))))
 
 get_file_info()
 
