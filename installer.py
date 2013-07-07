@@ -115,9 +115,9 @@ class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
     def tryRedirect(self, reply, *args, **kwargs):
             possibleRedirect = reply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
             if possibleRedirect:
-                reply = self.get(QtNetwork.QNetworkRequest(reply.url().resolved(possibleRedirect)))
-                reply.downloadProgress.connect(self.downloadProgress)
-                self.currentreply = reply
+                print("RAISE")
+                print("possibleRedirect", reply.url().toStr())
+                self.get(QtNetwork.QNetworkRequest(reply.url().resolved(possibleRedirect)))
             else:
                 self.trueFinished.emit(reply, *args, **kwargs)
 
@@ -125,6 +125,7 @@ class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
         request.setRawHeader("User-Agent", b"Unvanquished Installer") 
         reply = super().get(request, *args, **kwargs)
         reply.downloadProgress.connect(self.downloadProgress)
+        self.currentreply = reply
         return reply
 
 class NoWaitDestructorProcess(QtCore.QProcess):
