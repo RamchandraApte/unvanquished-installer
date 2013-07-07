@@ -165,7 +165,7 @@
     <item row="9" column="1">
      <widget class="QLabel" name="totalETA">
       <property name="text">
-       <string>1 hour</string>
+       <string>Unknown</string>
       </property>
      </widget>
     </item>
@@ -179,14 +179,14 @@
     <item row="6" column="1">
      <widget class="QLabel" name="currentFileETA">
       <property name="text">
-       <string>45 minutes</string>
+       <string>Unknown</string>
       </property>
      </widget>
     </item>
     <item row="0" column="0">
      <widget class="QLabel" name="currentDownloadSpeedLabel">
       <property name="text">
-       <string>Current Download Speed: 171 GB/s</string>
+       <string>Connecting...</string>
       </property>
      </widget>
     </item>
@@ -289,11 +289,7 @@
      </widget>
     </item>
     <item row="7" column="0" colspan="3">
-     <widget class="QProgressBar" name="currentFileProgressBar">
-      <property name="value">
-       <number>24</number>
-      </property>
-     </widget>
+     <widget class="QProgressBar" name="currentFileProgressBar"/>
     </item>
     <item row="6" column="0">
      <widget class="QLabel" name="currentFileName">
@@ -312,7 +308,7 @@
     <item row="15" column="0" colspan="3">
      <widget class="QProgressBar" name="totalProgressBar">
       <property name="value">
-       <number>24</number>
+       <number>0</number>
       </property>
      </widget>
     </item>

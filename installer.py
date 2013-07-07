@@ -236,8 +236,6 @@ class FileDownloader:
             totalSize, self.totalDownloaded, self.average_speed))
 
     def download_progress(self, bytes_received, total_bytes):
-        if self.timer.isActive() == False:
-            self.timer.start(500)
         self.bytes_received = bytes_received
         # print(self.bytes_received)
         current_time = time.perf_counter()
@@ -265,6 +263,8 @@ class FileDownloader:
             totalSize *
             2 ** 31 -
             1)
+        if  self.timer.isActive() == False and self.current_speed != 0:
+            self.timer.start(500)
 
     def write_data(self):
         self.fp.write(self.manager.currentreply.readAll())
@@ -285,6 +285,9 @@ class FileDownloader:
             return
         self.fp = open(os.path.join(self.base_dir, self.filename), "ab")
         url = QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl(self.filename))
+        ui.currentDownloadSpeedLabel.setText("Connecting...")
+        ui.currentFileETA.setText("Unknown")
+        ui.totalETA.setText("Unknown")
         filename = self.file_infos[self.index]["filename"]
         ui.currentFileName.setText(str(self.file_infos[self.index]["name"] if ismap(filename) else self.file_infos[self.index]["filename"]))
         ui.totalFileProgress.setText("{} out of {}".format(
