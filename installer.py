@@ -115,8 +115,6 @@ class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
     def tryRedirect(self, reply, *args, **kwargs):
             possibleRedirect = reply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
             if possibleRedirect:
-                print("RAISE")
-                print("possibleRedirect", reply.url().toStr())
                 self.get(QtNetwork.QNetworkRequest(reply.url().resolved(possibleRedirect)))
             else:
                 self.trueFinished.emit(reply, *args, **kwargs)
