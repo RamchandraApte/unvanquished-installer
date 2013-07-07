@@ -99,7 +99,7 @@ authAutomaticNext = False
 refs = []
 keep_ref = refs.append
 download_dir_url = "http://127.0.0.1:8080/installer/"
-download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
+#download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
 
 UNVANQUISHED_VERSION = "0.16"
 STAGES = ("Alpha", "Beta", "RC")
@@ -527,15 +527,20 @@ def main(reply):
 
 net_errmsg = "There was a problem downloading {}. Please check your internet connection."
 
+def finished(button):
+    if button == QtGui.QMessageBox.Retry:
+        file_info_err_msgbox.close()
+        get_file_info()
+    else:
+        app.exit(1)
+
 def file_info_net_err(reply):
+    global file_info_err_msgbox
     if reply.error():
-        msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"), 
-                                   detailedText = reply.errorString(), standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort)
-        button = msgbox.exec()
-        if button == QtGui.QMessageBox.Retry:
-            get_file_info()
-        else:
-            app.exit(1)
+        file_info_err_msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"), 
+                                   detailedText = reply.errorString(), standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort, finished=finished)
+
+        file_info_err_msgbox.show()
 
     else:
         app.setQuitOnLastWindowClosed(True)
@@ -544,11 +549,19 @@ def file_info_net_err(reply):
 manager = RedirectingQNetworkAccessManager()
 manager.trueFinished.connect(file_info_net_err)
 def get_file_info():
-    manager.get(QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl("file_info.csv"))))
+    progress_dialog = QtGui.QProgressDialog("Downloading the list of files...", "Quit", 0, 0, windowTitle = "Unvanquished Installer", canceled = lambda: app.exit(1))
+    keep_ref(progress_dialog)
+    timer = QtCore.QTimer(interval = progress_dialog.minimumDuration(), singleShot = True, timeout = progress_dialog.exec)
+    timer.start()
+    manager.trueFinished.connect(timer.stop)
+    manager.trueFinished.connect(progress_dialog.hide)
+    keep_ref(timer)
+    manager.get(QtNetwork.QNetworkRequest(QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl("file_info.sv"))))
 
 get_file_info()
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
+
     app.setQuitOnLastWindowClosed(False)
     sip.setdestroyonexit(False)
     sys.exit(app.exec())
