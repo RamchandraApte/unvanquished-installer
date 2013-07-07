@@ -52,7 +52,7 @@ if __name__ == "__main__":
         elif line == "quit":
             pass
         else:
-            raise AssertionError("child process gave incorrect output \"{}\"".format(line))
+            raise AssertionError("parent process gave incorrect input to child process \"{}\"".format(line))
         sys.exit()
 
 app = QtGui.QApplication(sys.argv)
