@@ -245,7 +245,7 @@ class FileDownloader:
             self.totalDownloaded), human_readable_size(totalSize)))
         SMOOTHING_FACTOR = 0.003
         # print(current_time,self.lasttime)
-        self.current_speed = (bytes_received - self.last_bytes_received) / \
+        self.current_speed = (self.bytes_received - self.last_bytes_received) / \
             (current_time - self.lasttime)
         # print(current_time - self.lasttime, bytes_received -
         # self.last_bytes_received, self.current_speed)
@@ -274,6 +274,7 @@ class FileDownloader:
         if self.fp != ...:
             self.fp.close()
 
+        self.last_bytes_received = 0
         self.completeFilesSize += int(self.file_infos[self.index]["size"])
         self.index += 1
         try:
