@@ -138,7 +138,6 @@ class FileDownloader:
     completeFilesSize = 0
     average_speed = ...
     index = -1
-    manager = RedirectingQNetworkAccessManager()
     fp = ...
 
     def __init__(self, file_infos):
@@ -146,6 +145,7 @@ class FileDownloader:
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_info)
         self.base_dir = os.path.join(installdir, "base")
+        self.manager = RedirectingQNetworkAccessManager()
         self.manager.trueFinished.connect(self.file_net_err)
         self.manager.trueFinished.connect(self.start_next_download)
         self.manager.downloadProgress.connect(self.connected)
