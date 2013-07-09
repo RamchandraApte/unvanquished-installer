@@ -112,6 +112,9 @@ class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
         super().__init__()
         super().finished.connect(self.tryRedirect)
 
+    def __del__(self):
+        self.currentreply.abort()
+        
     def tryRedirect(self, reply, *args, **kwargs):
             possibleRedirect = reply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
             if possibleRedirect:
@@ -270,6 +273,8 @@ class FileDownloader:
         self.fp.write(self.manager.currentreply.readAll())
 
     def start_next_download(self, reply):
+        if reply and reply.error() == QtNetwork.QNetworkReply.OperationCanceledError:
+            return # User clicked back and the reply was aborted in the QNetworkReply destructor.
         self.timer.stop()
         if self.fp != ...:
             self.fp.close()
@@ -408,6 +413,8 @@ def gen_table(tableWidget, file_info_csv):
 
 def start_file_downloader(id_):
     global _, totalSize, installdir, downloader
+    if id_ == 0:
+        del downloader # Abort the download
     if id_ == 1 and not authAutomaticNext:
         wizard.button(QtGui.QWizard.CommitButton).hide()
         selected_rows = tuple(file_info_csv[row] for row in set(
@@ -485,7 +492,8 @@ class InstallDirValidator(QtGui.QValidator):
 
 
 def main(reply):
-    global file_info_csv, sizeOfSelectedMapsFormat, sizeOfRequiredFiles, totalDownloadSizeFormat, ui, wizard
+    global file_info_csv, sizeOfSelectedMapsFormat, sizeOfRequiredFiles, totalDownloadSizeFormat, ui, wizard, downloader
+    downloader = None
     wizard = QtGui.QWizard()
     ui = ui_installer.Ui_Wizard()
     ui.setupUi(wizard)
@@ -564,7 +572,5 @@ def get_file_info():
 get_file_info()
 
 if __name__ == "__main__":
-
     app.setQuitOnLastWindowClosed(False)
-    sip.setdestroyonexit(False)
     sys.exit(app.exec())
