@@ -416,7 +416,7 @@ def start_file_downloader(id_):
     if id_ == 0:
         del downloader # Abort the download
     if id_ == 1 and not authAutomaticNext:
-        wizard.button(QtGui.QWizard.CommitButton).hide()
+        wizard.button(QtGui.QWizard.CommitButton).setEnabled(False)
         selected_rows = tuple(file_info_csv[row] for row in set(
             range.row() for range in ui.mapsToIncludeTableWidget.selectedIndexes()))
         notmaps = tuple(row for row in file_info_csv if not ismap(row["filename"]))
@@ -498,8 +498,8 @@ def main(reply):
     ui = ui_installer.Ui_Wizard()
     ui.setupUi(wizard)
     wizard.page(1).setCommitPage(True)
-    wizard.setButtonText(wizard.CommitButton, "(Will install automatically after downloading has finished)")
-    wizard.button(wizard.CommitButton).setEnabled(False)
+    wizard.setButtonText(wizard.CommitButton, "(Will advance to next page automatically after downloading has finished)")
+
     #wizard.setPixmap(QtGui.QWizard.WatermarkPixmap, QtGui.QPixmap(
     #    "/home/ramchandra/Pictures/picture_1.png")) # TODO:Replace with Unvanquished banner.
     install_dirs = {"posix": "test"}
