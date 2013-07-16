@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # TODO BUG: "connecting..." doesn"t show
 freeze = False
 import sys
-import sip
 import traceback
 from PyQt4 import QtCore, QtGui, QtNetwork
 
