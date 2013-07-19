@@ -97,7 +97,7 @@ import functools
 authAutomaticNext = False
 refs = []
 keep_ref = refs.append
-download_dir_url = "http://127.0.0.1:8080/installer/"
+download_dir_url = "http://127.0.0.1/installer/"
 #download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
 
 UNVANQUISHED_VERSION = "0.16"
