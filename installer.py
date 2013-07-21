@@ -100,7 +100,7 @@ keep_ref = refs.append
 download_dir_url = "http://127.0.0.1/installer/"
 #download_dir_url = "http://downloads.sourceforge.net/project/unvanquished/Assets/"
 
-UNVANQUISHED_VERSION = "0.16"
+UNVANQUISHED_VERSION = "0.17"
 STAGES = ("Alpha", "Beta", "RC")
 stages_index = {stage[0].lower(): stage for stage in STAGES}
 
