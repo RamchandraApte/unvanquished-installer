@@ -218,7 +218,7 @@ class FileDownloader:
         try:
             seconds = (total - downloaded) / speed
         except ZeroDivisionError:
-            return "∞ (Infinity, will take forever)"
+            return "∞ (Infinity, will take forever as the speed is 0)"
         days, rem = divmod(seconds, 86400)
         hours, rem = divmod(rem, 3600)
         minutes, seconds = divmod(rem, 60)
