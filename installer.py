@@ -317,6 +317,7 @@ class FileDownloader:
             self.resume_from_pos = self.fp.tell()
             if self.resume_from_pos != 0: # The file was partially downloaded
                 request.setRawHeader("Range", "bytes={}-".format(self.resume_from_pos))
+            self.manager.downloadProgress.connect(self.connected)
             self.manager.get(request)
 
 def get_dir_and_update_text():
