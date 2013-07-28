@@ -123,13 +123,6 @@
       </property>
      </widget>
     </item>
-    <item row="9" column="0" colspan="3">
-     <widget class="QLabel" name="invalidInstallDirLabel">
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Sorry, please enter a non-existing directory for the installation directory.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-     </widget>
-    </item>
     <item row="5" column="0" colspan="3">
      <widget class="QLabel" name="sizeOfRequiredFilesLabel">
       <property name="text">

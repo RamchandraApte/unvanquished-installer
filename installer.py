@@ -36,8 +36,7 @@ if __name__ == "__main__":
         try:
             os.makedirs(base_dir)
         except FileExistsError:
-            pass  # called when downloads have finished
-            # stat.S_IWUSR|stat.S_IXUSR) # rx for owner; none for everybody else
+            pass
 
         def recursivechown(dir_, *args, **kwargs):
             for path in itertools.chain((dir_,),
@@ -107,12 +106,14 @@ stages_index = {stage[0].lower(): stage for stage in STAGES}
 class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
     trueFinished = QtCore.pyqtSignal(QtNetwork.QNetworkReply)
     downloadProgress = QtCore.pyqtSignal("qint64", "qint64" )
+    currentreply = None
     def __init__(self):
         super().__init__()
         super().finished.connect(self.tryRedirect)
 
     def __del__(self):
-        self.currentreply.abort()
+        if self.currentreply != None:
+            self.currentreply.abort()
         
     def tryRedirect(self, reply, *args, **kwargs):
             possibleRedirect = reply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
@@ -148,8 +149,6 @@ class FileDownloader:
         self.manager.trueFinished.connect(self.file_net_err)
         self.manager.trueFinished.connect(self.start_next_download)
         self.manager.downloadProgress.connect(self.connected)
-        self.manager.downloadProgress.connect(
-            ui.currentFileProgressBar.setValue)
         self.manager.downloadProgress.connect(self.download_progress)
         self.install_proc = self.install()
         
@@ -178,8 +177,11 @@ class FileDownloader:
             proc.finished.connect(lambda:wizard.setEnabled(True))
             return proc
         else:
-            os.makedirs(self.base_dir)
-        self.start_next_download(None)
+            try:
+                os.makedirs(self.base_dir)
+            except FileExistsError:
+                pass # User may be continuing download
+        self.start_next_download()
         return None
 
     def readyRead(self):
@@ -238,7 +240,8 @@ class FileDownloader:
             totalSize, self.totalDownloaded, self.average_speed))
 
     def download_progress(self, bytes_received, total_bytes):
-        self.bytes_received = bytes_received
+        self.bytes_received = bytes_received + self.resume_from_pos
+        ui.currentFileProgressBar.setValue(self.bytes_received)
         # print(self.bytes_received)
         current_time = time.perf_counter()
         ui.currentFileDownloadProgress.setText("{} / {}".format(human_readable_size(
@@ -271,12 +274,17 @@ class FileDownloader:
     def write_data(self):
         self.fp.write(self.manager.currentreply.readAll())
 
-    def start_next_download(self, reply):
+    def start_next_download(self, reply=None):
         if reply and reply.error() == QtNetwork.QNetworkReply.OperationCanceledError:
             return # User clicked back and the reply was aborted in the QNetworkReply destructor.
         self.timer.stop()
         if self.fp != ...:
+            shutil.move(self.fp.name, self.fp.name[:-len(".part")]) # Move the filename to the filename without .part
             self.fp.close()
+        else:
+            # First download
+            with open(os.path.join(installdir, "unvanquished_version"), "w") as fp:
+                fp.write(UNVANQUISHED_VERSION)
 
         self.last_bytes_received = 0
         self.completeFilesSize += int(self.file_infos[self.index]["size"])
@@ -288,7 +296,7 @@ class FileDownloader:
                 self.install_proc.write(b"chown_root\n")
             wizard.next()
             return
-        self.fp = open(os.path.join(self.base_dir, self.filename), "ab")
+
         url = QtCore.QUrl(download_dir_url).resolved(QtCore.QUrl(self.filename))
         ui.currentDownloadSpeedLabel.setText("Connecting...")
         ui.currentFileETA.setText("Unknown")
@@ -302,7 +310,14 @@ class FileDownloader:
         ui.fileInfoTableWidget.selectRow(self.index)
         ui.fileInfoTableWidget.setSelectionMode(oldSelectionMode)
         request = QtNetwork.QNetworkRequest(url)
-        self.manager.get(request)
+        if os.path.exists(os.path.join(self.base_dir, self.filename)):
+            self.start_next_download()
+        else:
+            self.fp = open(os.path.join(self.base_dir, self.filename+".part"), "ab")
+            self.resume_from_pos = self.fp.tell()
+            if self.resume_from_pos != 0: # The file was partially downloaded
+                request.setRawHeader("Range", "bytes={}-".format(self.resume_from_pos))
+            self.manager.get(request)
 
 def get_dir_and_update_text():
     dialog = QtGui.QFileDialog()
@@ -478,18 +493,6 @@ def stateChanged(state):
     elif state == QtCore.Qt.PartiallyChecked:
         ui.allCheckBox.setCheckState(QtCore.Qt.Checked)
 
-
-class InstallDirValidator(QtGui.QValidator):
-    def validate(self, string, pos):
-        #TODO check for invalid filename characters
-        if not os.path.exists(string) or string == "":
-            ui.invalidInstallDirLabel.setText("")
-            return self.Acceptable, string, pos
-        else:
-            ui.invalidInstallDirLabel.setText('<html><head/><body><p><span style=" color:#ff0000;">Sorry, please enter a non-existing directory for the installation directory.</span></p></body></html>')
-            return self.Intermediate, string, pos
-
-
 def main(reply):
     global file_info_csv, sizeOfSelectedMapsFormat, sizeOfRequiredFiles, totalDownloadSizeFormat, ui, wizard, downloader
     downloader = None
@@ -528,7 +531,6 @@ def main(reply):
     file_system_model.setRootPath("")
     file_system_completer.setModel(file_system_model)
     ui.directoryToInstallInLineEdit.setCompleter(file_system_completer)
-    ui.directoryToInstallInLineEdit.setValidator(InstallDirValidator())
     wizard.page(0).initializePage = lambda: ui.directoryToInstallInLineEdit.setText(install_dirs[os.name])
     wizard.page(0).registerField("test123*", ui.directoryToInstallInLineEdit)
     wizard.button(wizard.FinishButton).clicked.connect(on_finish_button)
