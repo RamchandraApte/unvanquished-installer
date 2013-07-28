@@ -199,7 +199,7 @@ class FileDownloader:
             wizard.setEnabled(True)
     
     def connected(self, bytes_received, total_bytes):
-        self.total_bytes = total_bytes
+        self.total_bytes = total_bytes+self.resume_from_pos
         self.lasttime = time.monotonic()
         self.last_bytes_received = bytes_received
         size = int(self.file_infos[self.index]["size"])
@@ -215,6 +215,8 @@ class FileDownloader:
 
     @staticmethod
     def eta(total, downloaded, speed):
+        assert downloaded < total
+        assert speed >= 0
         try:
             seconds = (total - downloaded) / speed
         except ZeroDivisionError:
