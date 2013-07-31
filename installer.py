@@ -114,7 +114,7 @@ class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
     def __del__(self):
         if self.currentreply != None:
             self.currentreply.abort()
-        
+
     def tryRedirect(self, reply, *args, **kwargs):
             possibleRedirect = reply.attribute(QtNetwork.QNetworkRequest.RedirectionTargetAttribute)
             if possibleRedirect:
@@ -123,7 +123,7 @@ class RedirectingQNetworkAccessManager(QtNetwork.QNetworkAccessManager):
                 self.trueFinished.emit(reply, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        request.setRawHeader("User-Agent", b"Unvanquished Installer") 
+        request.setRawHeader("User-Agent", b"Unvanquished Installer")
         reply = super().get(request, *args, **kwargs)
         reply.downloadProgress.connect(self.downloadProgress)
         self.currentreply = reply
@@ -133,7 +133,7 @@ class NoWaitDestructorProcess(QtCore.QProcess):
     def __del__(self):
         self.write("quit\n")
         self.waitForFinished()
-    
+
 class FileDownloader:
     completeFilesSize = 0
     average_speed = ...
@@ -151,17 +151,17 @@ class FileDownloader:
         self.manager.downloadProgress.connect(self.connected)
         self.manager.downloadProgress.connect(self.download_progress)
         self.install_proc = self.install()
-        
+
     def file_net_err(self, reply):
         if reply.error():
-            msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("a file needed by Unvanquished"), detailedText = reply.errorString(), 
+            msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("a file needed by Unvanquished"), detailedText = reply.errorString(),
                                     standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort)
             button = msgbox.exec()
             if button == QtGui.QMessageBox.Retry:
                 self.index -= 1
             else:
                 app.exit(1)
-    
+
     def install(self):
         # TODO in production installer.py should be removed
         if not os.access(os.path.split(os.path.abspath(installdir))[0], os.W_OK|os.X_OK):
@@ -197,7 +197,7 @@ class FileDownloader:
                 authAutomaticNext = False
                 self.start_next_download(None)
             wizard.setEnabled(True)
-    
+
     def connected(self, bytes_received, total_bytes):
         self.total_bytes = total_bytes+self.resume_from_pos
         self.lasttime = time.monotonic()
@@ -447,7 +447,7 @@ def start_file_downloader(id_):
 
 def on_finish_button():
     # After the Finish button is clicked.
-    
+
     if ui.displayUnvInAppMenu.isChecked():
         with open("unvanquished.in.desktop") as infp, open("unvanquished.desktop", "w") as outfp:
             outfp.write(infp.read().format(installdir=os.path.abspath(installdir)))
@@ -552,7 +552,7 @@ def finished(button):
 def file_info_net_err(reply):
     global file_info_err_msgbox
     if reply.error():
-        file_info_err_msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"), 
+        file_info_err_msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"),
                                    detailedText = reply.errorString(), standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort, finished=finished)
 
         file_info_err_msgbox.show()
