@@ -201,7 +201,7 @@ class FileDownloader:
     def connected(self, bytes_received, total_bytes):
         self.total_bytes = total_bytes+self.resume_from_pos
         self.lasttime = time.monotonic()
-        self.last_bytes_received = bytes_received
+        self.last_bytes_received = bytes_received+self.resume_from_pos
         size = int(self.file_infos[self.index]["size"])
         # ui.downloadProgressTableWidget.setItem(self.index, 3,
         # QtGui.QTableWidgetItem(size))
@@ -264,7 +264,7 @@ class FileDownloader:
             self.average_speed = self.current_speed
 
         self.lasttime = current_time
-        self.last_bytes_received = bytes_received
+        self.last_bytes_received = bytes_received+self.resume_from_pos
         ui.totalProgressBar.setValue(
             self.totalDownloaded /
             totalSize *
