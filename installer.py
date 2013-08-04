@@ -525,7 +525,7 @@ def main(reply):
     sizeOfSelectedMapsFormat = ui.sizeOfSelectedMapsLabel.text()
     sizeOfRequiredFilesFormat = ui.sizeOfRequiredFilesLabel.text()
     totalDownloadSizeFormat = ui.totalDownloadSizeLabel.text()
-    sizeOfRequiredFiles = sum(int(row["size"]) for row in file_info_csv)
+    sizeOfRequiredFiles = sum(int(row["size"]) for row in file_info_csv if not ismap(row["filename"]))
     ui.sizeOfRequiredFilesLabel.setText(sizeOfRequiredFilesFormat.format(human_readable_size(sizeOfRequiredFiles)))
     ui.mapsToIncludeTableWidget.itemSelectionChanged.connect(itemSelectionChanged)
     ui.allCheckBox.setCheckState(QtCore.Qt.PartiallyChecked)
