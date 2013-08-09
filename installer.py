@@ -168,6 +168,11 @@ class FileDownloader:
             if not freeze:
                 proc = popen_root((sys.executable, os.path.abspath("installer.py"),
                             os.path.abspath(installdir), str(os.getuid())),)
+                if proc == None:
+                    wizard.back()
+                    msgbox = QtGui.QMessageBox(QtGui.QMessageBox.Critical, "Error", "The installation directory is only accessible by the root user and no method starting a GUI authentication dialog has been found. Try changing the installation directory to a location accessible by you, or modifying the installation directory's permissions to allow you to access it, or install gksudo/gksu/kdesudo/kdesu.")
+                    msgbox.exec()
+                    return
             if freeze:
                 proc = popen_root((sys.executable,
                                 os.path.abspath(installdir), str(os.getuid())),)
@@ -367,13 +372,18 @@ def linux_gui_sudo():
     if exes:
         exe = exes[0]
         return exe
+    return None
 
 def popen_root(cmd_args, *args, **kwargs):
     # TODO windos
     if os.name == "posix":
         proc = NoWaitDestructorProcess()
-        proc.start(linux_gui_sudo(), cmd_args, *args, **kwargs)
-        return proc
+        bin = linux_gui_sudo()
+        if bin:
+            proc.start(bin, cmd_args, *args, **kwargs)
+            return proc
+        else:
+            return None
     elif os.name == "win32":
         pass
 
@@ -442,6 +452,7 @@ def start_file_downloader(id_):
         totalSize = sum(int(row["size"]) for row in file_infos)
         ui.totalProgressBar.setMaximum(2 ** 31 - 1)  # max value of signed int
         installdir = ui.directoryToInstallInLineEdit.text()
+        downloader = None # Otherwise, if a GUI authentication method can not be found, wizard.back will be called from FileDownloader.install(), invoking start_file_downloader(), which deletes downloader, which will not be defined.
         downloader = FileDownloader(file_infos)
 
 
