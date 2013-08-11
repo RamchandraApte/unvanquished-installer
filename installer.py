@@ -32,9 +32,9 @@ if __name__ == "__main__":
         parser.add_argument("installdir")
         parser.add_argument("uid")
         args = parser.parse_args()
-        base_dir = os.path.join(args.installdir, "base")
+        map_dir = os.path.join(args.installdir, "main")
         try:
-            os.makedirs(base_dir)
+            os.makedirs(map_dir)
         except FileExistsError:
             pass
 
@@ -144,7 +144,7 @@ class FileDownloader:
         self.file_infos = file_infos
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_info)
-        self.base_dir = os.path.join(installdir, "base")
+        self.map_dir = os.path.join(installdir, "base")
         self.manager = RedirectingQNetworkAccessManager()
         self.manager.trueFinished.connect(self.file_net_err)
         self.manager.trueFinished.connect(self.start_next_download)
@@ -183,7 +183,7 @@ class FileDownloader:
             return proc
         else:
             try:
-                os.makedirs(self.base_dir)
+                os.makedirs(self.map_dir)
             except FileExistsError:
                 pass # User may be continuing download
         self.start_next_download()
@@ -317,10 +317,10 @@ class FileDownloader:
         ui.fileInfoTableWidget.selectRow(self.index)
         ui.fileInfoTableWidget.setSelectionMode(oldSelectionMode)
         request = QtNetwork.QNetworkRequest(url)
-        if os.path.exists(os.path.join(self.base_dir, self.filename)):
+        if os.path.exists(os.path.join(self.map_dir, self.filename)):
             self.start_next_download()
         else:
-            self.fp = open(os.path.join(self.base_dir, self.filename+".part"), "ab")
+            self.fp = open(os.path.join(self.map_dir, self.filename+".part"), "ab")
             self.resume_from_pos = self.fp.tell()
             if self.resume_from_pos != 0: # The file was partially downloaded
                 request.setRawHeader("Range", "bytes={}-".format(self.resume_from_pos))
