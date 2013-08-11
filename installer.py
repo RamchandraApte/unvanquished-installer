@@ -67,8 +67,8 @@ def excepthook(exctype, value, tb):
         error_dialog = QtGui.QMessageBox(
             QtGui.QMessageBox.Critical, "Internal Error",
             "Sorry, an internal error has occured. The Unvanquished Installer"
-            " can't continue. Please <a href=\"https://github.com/Unvanquished"
-            "/Unvanquished/issues\">file a bug report</a> with the diagnostic "
+            " can't continue. Please <a href=\"https://github.com/RamchandraApte"
+            "/unvanquished-installer/issues\">file a bug report</a> with the diagnostic "
             "information below.")
 
         error_dialog.setInformativeText("".join(
