@@ -144,7 +144,7 @@ class FileDownloader:
         self.file_infos = file_infos
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_info)
-        self.map_dir = os.path.join(installdir, "base")
+        self.map_dir = os.path.join(installdir, "main")
         self.manager = RedirectingQNetworkAccessManager()
         self.manager.trueFinished.connect(self.file_net_err)
         self.manager.trueFinished.connect(self.start_next_download)
