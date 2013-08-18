@@ -213,6 +213,7 @@ class FileDownloader:
         ui.currentFileProgressBar.setMaximum(size)
         self.manager.downloadProgress.disconnect(self.connected)
         self.manager.currentreply.readyRead.connect(self.write_data)
+        self.manager.currentreply.readyRead.emit()
 
     @property
     def totalDownloaded(self):
