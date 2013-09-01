@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PYUIC = pyuic4
-PY_SRC_DIR= ~/Downloads/Python-3*
+PY_SRC_DIR= $(shell echo ~/Downloads/Python-3*/)
 PYTHON = $(PY_SRC_DIR)/python
 LN = ln
 RM = rm
