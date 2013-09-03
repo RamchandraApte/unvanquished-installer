@@ -156,7 +156,12 @@ class FileDownloader:
         self.manager.trueFinished.connect(self.start_next_download)
         self.manager.downloadProgress.connect(self.connected)
         self.manager.downloadProgress.connect(self.download_progress)
-        self.install_proc = self.install()
+        try:
+            self.install_proc = self.install()
+        except PermissionError:
+            pass
+        else:
+            self.start_next_download()
 
     def file_net_err(self, reply):
         if reply.error():
@@ -176,9 +181,9 @@ class FileDownloader:
                             os.path.abspath(installdir), str(os.getuid())),)
                 if proc == None:
                     wizard.back()
-                    msgbox = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical, "Error", "The installation directory is only accessible by the root user and no method starting a GUI authentication dialog has been found. Try changing the installation directory to a location accessible by you, or modifying the installation directory's permissions to allow you to access it, or install gksudo/gksu/kdesudo/kdesu.")
+                    msgbox = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical, "Error", "The installation directory is only accessible by the root user and no method for starting a GUI authentication dialog has been found. Try changing the installation directory to a location accessible by you, or modifying the installation directory's permissions to allow you to access it, or install gksudo/gksu/kdesudo/kdesu.")
                     msgbox.exec()
-                    return
+                    raise PermissionError
             if freeze:
                 proc = popen_root((sys.executable,
                                 os.path.abspath(installdir), str(os.getuid())),)
@@ -187,13 +192,12 @@ class FileDownloader:
             proc.readyRead.connect(self.readyRead)
             proc.finished.connect(lambda:wizard.setEnabled(True))
             return proc
+
         else:
             try:
                 os.makedirs(self.map_dir)
             except FileExistsError:
                 pass # User may be continuing download
-        self.start_next_download()
-        return None
 
     def readyRead(self):
         global authAutomaticNext
