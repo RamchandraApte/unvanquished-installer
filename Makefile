@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-PYUIC = pyuic4
+PYUIC = pyuic5
 PY_SRC_DIR= $(shell echo ~/Downloads/Python-3*/)
 PYTHON = $(PY_SRC_DIR)/python
 LN = ln
@@ -31,7 +31,7 @@ tar_data.py: gen_tar_data.py installer.py dist
 	$(LN) installer.py dist/installer.py
 	$(PYTHON) gen_tar_data.py
 tar_dec_dist: tar_data.py tar_dec.py installer.py
-	$(PYTHON) $(PY_SRC_DIR)/Tools/freeze/freeze.py -X PyQt4 -o tar_dec_dist tar_dec.py -m installer -m encodings.idna -m encodings.ascii -m encodings.utf_8
+	$(PYTHON) $(PY_SRC_DIR)/Tools/freeze/freeze.py -X PyQt5 -o tar_dec_dist tar_dec.py -m installer -m encodings.idna -m encodings.ascii -m encodings.utf_8
 
 compile: tar_dec_dist
 	$(MAKE) -C tar_dec_dist

@@ -1,3 +1,4 @@
+
 __license__ = '''
 Unvanquished Installer, an installer for Unvanquished (http://unvanquished.net).
 Copyright (C) 2012-2013  Ramchandra Apte
@@ -17,9 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 # TODO BUG: "connecting..." doesn"t show
 freeze = False
+qt5 = True
 import sys
 import traceback
-from PyQt4 import QtCore, QtGui, QtNetwork
+if qt5:
+    from PyQt5 import QtCore, QtGui, QtWidgets, QtNetwork
+else:
+    from PyQt4 import QtCore, QtGui, QtNetwork
+    QtWidgets = QtGui
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -53,7 +59,7 @@ if __name__ == "__main__":
             raise AssertionError("parent process gave incorrect input to child process \"{}\"".format(line))
         sys.exit()
 
-app = QtGui.QApplication(sys.argv)
+app = QtWidgets.QApplication(sys.argv)
 translator = QtCore.QTranslator()
 translator.load("hellotr_la")
 app.installTranslator(translator)
@@ -64,8 +70,8 @@ def excepthook(exctype, value, tb):
     global error_dialog_open
     if error_dialog_open is False: # To ensure that cases where an error occurs in the error handler, infinite dialogs won't popup.
         error_dialog_open = True
-        error_dialog = QtGui.QMessageBox(
-            QtGui.QMessageBox.Critical, "Internal Error",
+        error_dialog = QtWidgets.QMessageBox(
+            QtWidgets.QMessageBox.Critical, "Internal Error",
             "Sorry, an internal error has occured. The Unvanquished Installer"
             " can't continue. Please <a href=\"https://github.com/RamchandraApte"
             "/unvanquished-installer/issues\">file a bug report</a> with the diagnostic "
@@ -154,10 +160,10 @@ class FileDownloader:
 
     def file_net_err(self, reply):
         if reply.error():
-            msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("a file needed by Unvanquished"), detailedText = reply.errorString(),
-                                    standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort)
+            msgbox = QtWidgets.QMessageBox(icon = QtWidgets.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("a file needed by Unvanquished"), detailedText = reply.errorString(),
+                                    standardButtons = QtWidgets.QMessageBox.Retry|QtWidgets.QMessageBox.Abort)
             button = msgbox.exec()
-            if button == QtGui.QMessageBox.Retry:
+            if button == QtWidgets.QMessageBox.Retry:
                 self.index -= 1
             else:
                 app.exit(1)
@@ -170,7 +176,7 @@ class FileDownloader:
                             os.path.abspath(installdir), str(os.getuid())),)
                 if proc == None:
                     wizard.back()
-                    msgbox = QtGui.QMessageBox(QtGui.QMessageBox.Critical, "Error", "The installation directory is only accessible by the root user and no method starting a GUI authentication dialog has been found. Try changing the installation directory to a location accessible by you, or modifying the installation directory's permissions to allow you to access it, or install gksudo/gksu/kdesudo/kdesu.")
+                    msgbox = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical, "Error", "The installation directory is only accessible by the root user and no method starting a GUI authentication dialog has been found. Try changing the installation directory to a location accessible by you, or modifying the installation directory's permissions to allow you to access it, or install gksudo/gksu/kdesudo/kdesu.")
                     msgbox.exec()
                     return
             if freeze:
@@ -209,7 +215,7 @@ class FileDownloader:
         self.last_bytes_received = bytes_received+self.resume_from_pos
         size = int(self.file_infos[self.index]["size"])
         # ui.downloadProgressTableWidget.setItem(self.index, 3,
-        # QtGui.QTableWidgetItem(size))
+        # QtWidgets.QTableWidgetItem(size))
         ui.currentFileProgressBar.setMaximum(size)
         self.manager.downloadProgress.disconnect(self.connected)
         self.manager.currentreply.readyRead.connect(self.write_data)
@@ -314,7 +320,7 @@ class FileDownloader:
         ui.totalFileProgress.setText("{} out of {}".format(
             self.index, len(self.file_infos)))
         oldSelectionMode = ui.fileInfoTableWidget.selectionMode()
-        ui.fileInfoTableWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        ui.fileInfoTableWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         ui.fileInfoTableWidget.selectRow(self.index)
         ui.fileInfoTableWidget.setSelectionMode(oldSelectionMode)
         request = QtNetwork.QNetworkRequest(url)
@@ -329,9 +335,9 @@ class FileDownloader:
             self.manager.get(request)
 
 def get_dir_and_update_text():
-    dialog = QtGui.QFileDialog()
-    dialog.setFileMode(QtGui.QFileDialog.Directory)
-    dialog.setAcceptMode(QtGui.QFileDialog.AcceptSave)
+    dialog = QtWidgets.QFileDialog()
+    dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+    dialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
     if dialog.exec():
         dir_ = dialog.selectedFiles()[0]
         ui.directoryToInstallInLineEdit.setText(dir_)
@@ -432,7 +438,7 @@ def gen_table(tableWidget, file_info_csv):
         for column_index, value in enumerate(map_info(row["filename"], row_index)):
             if isinstance(value, str):
                 tableWidget.setItem(
-                    row_index, column_index, QtGui.QTableWidgetItem(value))
+                    row_index, column_index, QtWidgets.QTableWidgetItem(value))
             else:
                 tableWidget.setCellWidget(row_index, column_index, value)
 
@@ -444,7 +450,7 @@ def start_file_downloader(id_):
     if id_ == 0:
         del downloader # Abort the download
     if id_ == 1 and not authAutomaticNext:
-        wizard.button(QtGui.QWizard.CommitButton).setEnabled(False)
+        wizard.button(QtWidgets.QWizard.CommitButton).setEnabled(False)
         selected_rows = tuple(file_info_csv[row] for row in set(
             range.row() for range in ui.mapsToIncludeTableWidget.selectedIndexes()))
         notmaps = tuple(row for row in file_info_csv if not ismap(row["filename"]))
@@ -479,7 +485,7 @@ def on_finish_button():
         else:
             failed_actions = ("desktop menu entry", "icon")
         if failed_actions:
-            message_box = QtGui.QMessageBox(QtGui.QMessageBox.Warning, "Error", "Installing the {failed_actions} failed".format(failed_actions = " and ".join(failed_actions)) + ("." if exists else " because XDG utils was not found."))
+            message_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning, "Error", "Installing the {failed_actions} failed".format(failed_actions = " and ".join(failed_actions)) + ("." if exists else " because XDG utils was not found."))
             message_box.setInformativeText(err_details)
             message_box.exec()
     if ui.runUnvAfterFinish.isChecked():
@@ -511,13 +517,13 @@ def stateChanged(state):
 def main(reply):
     global file_info_csv, sizeOfSelectedMapsFormat, sizeOfRequiredFiles, totalDownloadSizeFormat, ui, wizard, downloader
     downloader = None
-    wizard = QtGui.QWizard()
+    wizard = QtWidgets.QWizard()
     ui = ui_installer.Ui_Wizard()
     ui.setupUi(wizard)
     wizard.page(1).setCommitPage(True)
     wizard.setButtonText(wizard.CommitButton, "(Will advance to next page automatically after downloading has finished)")
 
-    #wizard.setPixmap(QtGui.QWizard.WatermarkPixmap, QtGui.QPixmap(
+    #wizard.setPixmap(QtWidgets.QWizard.WatermarkPixmap, QtWidgets.QPixmap(
     #    "/home/ramchandra/Pictures/picture_1.png")) # TODO:Replace with Unvanquished banner.
     install_dirs = {"posix": "test"}
     browseIcon = QtGui.QIcon.fromTheme(
@@ -541,8 +547,8 @@ def main(reply):
     ui.sizeOfRequiredFilesLabel.setText(sizeOfRequiredFilesFormat.format(human_readable_size(sizeOfRequiredFiles)))
     ui.mapsToIncludeTableWidget.itemSelectionChanged.connect(itemSelectionChanged)
     ui.allCheckBox.setCheckState(QtCore.Qt.PartiallyChecked)
-    file_system_completer = QtGui.QCompleter()
-    file_system_model = QtGui.QFileSystemModel()
+    file_system_completer = QtWidgets.QCompleter()
+    file_system_model = QtWidgets.QFileSystemModel()
     file_system_model.setRootPath("")
     file_system_completer.setModel(file_system_model)
     ui.directoryToInstallInLineEdit.setCompleter(file_system_completer)
@@ -555,7 +561,7 @@ def main(reply):
 net_errmsg = "There was a problem downloading {}. Please check your internet connection."
 
 def finished(button):
-    if button == QtGui.QMessageBox.Retry:
+    if button == QtWidgets.QMessageBox.Retry:
         file_info_err_msgbox.close()
         get_file_info()
     else:
@@ -564,8 +570,8 @@ def finished(button):
 def file_info_net_err(reply):
     global file_info_err_msgbox
     if reply.error():
-        file_info_err_msgbox = QtGui.QMessageBox(icon = QtGui.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"),
-                                   detailedText = reply.errorString(), standardButtons = QtGui.QMessageBox.Retry|QtGui.QMessageBox.Abort, finished=finished)
+        file_info_err_msgbox = QtWidgets.QMessageBox(icon = QtWidgets.QMessageBox.Critical, windowTitle = "Error Downloading File", text = net_errmsg.format("the list of files needed by Unvanquished"),
+                                   detailedText = reply.errorString(), standardButtons = QtWidgets.QMessageBox.Retry|QtWidgets.QMessageBox.Abort, finished=finished)
 
         file_info_err_msgbox.show()
 
@@ -576,7 +582,7 @@ def file_info_net_err(reply):
 manager = RedirectingQNetworkAccessManager()
 manager.trueFinished.connect(file_info_net_err)
 def get_file_info():
-    progress_dialog = QtGui.QProgressDialog("Downloading the list of files...", "Quit", 0, 0, windowTitle = "Unvanquished Installer", canceled = lambda: app.exit(1))
+    progress_dialog = QtWidgets.QProgressDialog("Downloading the list of files...", "Quit", 0, 0, windowTitle = "Unvanquished Installer", canceled = lambda: app.exit(1))
     keep_ref(progress_dialog)
     timer = QtCore.QTimer(interval = progress_dialog.minimumDuration(), singleShot = True, timeout = progress_dialog.exec)
     timer.start()
