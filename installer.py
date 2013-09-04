@@ -1,4 +1,3 @@
-
 __license__ = '''
 Unvanquished Installer, an installer for Unvanquished (http://unvanquished.net).
 Copyright (C) 2012-2013  Ramchandra Apte
