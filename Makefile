@@ -18,7 +18,7 @@ PYUIC = pyuic5
 PY_SRC_DIR= $(shell echo ~/Downloads/Python-3*/)
 PYTHON = $(PY_SRC_DIR)/python
 LN = ln
-RM = rm
+RM = rm -f
 # TODO: make compilation optimized
 # TODO: upgrade system and use newer packages
 
@@ -43,5 +43,6 @@ run: xz_dec
 
 .PHONY: clean
 clean:
-	rm -rf tar_dec_dist/
+	$(RM) -r tar_dec_dist/
+	$(RM) -f ui_installer.py
 	$(MAKE) -C xz_dec clean
